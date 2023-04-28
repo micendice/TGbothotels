@@ -1,4 +1,4 @@
-"""from telebot.types import Message
+from telebot.types import Message
 
 from loader import bot
 
@@ -6,11 +6,9 @@ from loader import bot
 # Эхо хендлер, куда летят текстовые сообщения без указанного состояния
 @bot.message_handler(state=None)
 def bot_echo(message: Message):
-    bot.reply_to(
-        message, "Эхо без состояния или фильтра.\n" f"Сообщение: {message.text}"
-    )
+    bot.reply_to(message, "Эхо без состояния или фильтра.\n" 
+                          f"Сообщение: {message.text}")
 """
-
 from aiogram import types
 from loader import dp
 import random
@@ -39,5 +37,5 @@ def dumb_ai(msg: str, user_name: str):
 async def echo_text_message(msg: types.Message):
     response = dumb_ai(msg.text, msg.from_user.first_name)
 
-    await msg.answer(response)
+    await msg.answer(response)"""
 

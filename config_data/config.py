@@ -11,7 +11,8 @@ RAPID_API_KEY = os.getenv("RAPID_API_KEY")
 DEFAULT_COMMANDS = (
     ("start", "Запустить бота"),
     ("help", "Вывести справку"),
-    ("echo", "Реакция на непонятное")
+    ("echo", "Реакция на непонятное"),
+    ("survey", "Опрос")
 )
 CUSTOM_COMMANDS = (
     ("high", "Вывод самых высоких значений"),

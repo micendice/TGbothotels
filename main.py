@@ -1,9 +1,9 @@
-"""from loader import bot
+from loader import bot
 import handlers  # noqa
 from telebot.custom_filters import StateFilter
-from utils.set_bot_commands import set_default_commands"""
+from utils.set_bot_commands import set_default_commands
 
-from aiogram import executor
+f"""rom aiogram import executor
 from loader import dp
 
 
@@ -23,9 +23,10 @@ low_command
 custom_command
 history_command
 echo_text_message
+"""
 
 
 if __name__ == "__main__":
-    #bot.add_custom_filter(StateFilter(bot))
-    #setup_default_bot_commands()
-    executor.start_polling(dp)
+    bot.add_custom_filter(StateFilter(bot))
+    set_default_commands(bot)
+    bot.infinity_polling()
