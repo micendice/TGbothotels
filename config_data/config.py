@@ -10,5 +10,23 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 RAPID_API_KEY = os.getenv("RAPID_API_KEY")
 DEFAULT_COMMANDS = (
     ("start", "Запустить бота"),
-    ("help", "Вывести справку")
+    ("help", "Вывести справку"),
+    ("echo", "Реакция на непонятное")
 )
+CUSTOM_COMMANDS = (
+    ("high", "Вывод самых высоких значений"),
+    ("low", "Вывод самых низких значений"),
+    ("custom", "Вывод диапазона значений"),
+    ("history", "Вывод последних десяти запросов")
+                   )
+
+
+"""
+User info for States
+1.Name
+2.Age
+3.Country
+4.City
+5.Phone number
+
+"""
