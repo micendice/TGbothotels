@@ -12,7 +12,7 @@ async def custom_command(message: types.Message):
                         """
 
 
-@bot.message_handler(command=["bestdeal"])
+@bot.message_handler(commands=["bestdeal"])
 def bestdeal(message: Message):
     #bot.set_state(message.from_user.id, UserInfoState.name, message.chat.id)
     bot.send_message(message.from_user.id, f'Привет {message.from_user.username} \n'

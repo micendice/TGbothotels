@@ -4,7 +4,6 @@ from states.contact_info import UserInfoState
 from telebot.types import Message
 
 
-
 @bot.message_handler(commands=["survey"])
 def survey(message:Message) -> None:
     bot.set_state(message.from_user.id, UserInfoState.name, message.chat.id)
@@ -48,7 +47,7 @@ def get_country(message: Message) -> None:
 def get_city(message: Message) -> None:
     bot.send_message(message.from_user.id, "Спасибо, записал. Отправь свой номер нажав на кнопку",
                      reply_markup=request_contact())
-    bot.set_state(message.from_user.id, message.chat.id)
+    bot.set_state(message.from_user.id, UserInfoState.phone_number, message.chat.id)
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['city'] = message.text
@@ -65,6 +64,7 @@ def get_contact(message: Message) -> None:
                    f"Страна - {data['country']}\n" \
                    f"Город - {data['city']}\n" \
                    f"Номер телефона - {data['phone_number']}\n"
+            print(text)
             bot.send_message(message.from_user.id, text)
     else:
         bot.send_message(message.from_user.id, "Чтобы отправить контакт, нажми на кнопку")

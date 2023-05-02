@@ -11,7 +11,7 @@ from states.contact_info import UserInfoState
 from telebot.types import Message
 
 
-@bot.message_handler(command=["history"])
+@bot.message_handler(commands=["history"])
 def history(message: Message):
     #bot.set_state(message.from_user.id, UserInfoState.name, message.chat.id)
     bot.send_message(message.from_user.id, f'Привет {message.from_user.username} \n'

@@ -3,7 +3,7 @@ from states.contact_info import UserInfoState
 from telebot.types import Message
 
 
-@bot.message_handler(command=["lowprice"])
+@bot.message_handler(commands=["lowprice"])
 def lowprice(message: Message):
     #bot.set_state(message.from_user.id, UserInfoState.name, message.chat.id)
     bot.send_message(message.from_user.id, f'Привет {message.from_user.username}'
