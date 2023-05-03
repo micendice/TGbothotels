@@ -24,7 +24,7 @@ def final_text(message: Message, data: Dict):
 
 
 @bot.message_handler(commands=["highprice"])
-def highprice(message: Message):
+def highprice(message: Message) -> None:
     bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
     bot.send_message(message.from_user.id, f'Привет {message.from_user.first_name} \n'
                                            f'Введите город для поиска отелей. ')
@@ -45,7 +45,7 @@ def get_city(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.hotels_num)
 def get_city(message: Message) -> None:
-    if message.text.isdigit() and int(message.text) <= 5:
+    if message.text.isdigit() and int(message.text) <= max_hotel:
         bot.send_message(message.from_user.id, "Спасибо, записал. "
                                                "Нужно ли показывать фотографии отелей? Нажмите 'Да' или 'Нет'",
                          reply_markup=y_or_no("Нужно ли показывать фотографии отелей? "))
@@ -81,15 +81,15 @@ def get_need_photo(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.num_photo)
 def get_num_photo(message: Message) -> None:
-    if message.text.isdigit() and 0 < int(message.text) <= 4:
+    if message.text.isdigit() and 0 < int(message.text) <= max_photo:
         bot.send_message(message.from_user.id, "Спасибо, записал. Итак, проверьте, пожалуйста, все ли верно:")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             bot.set_state(message.from_user.id, SearchParamState.complete, message.chat.id)
             data['num_photo'] = int(message.text)
             final_text(message, data)
     else:
-        bot.send_message(message.from_user.id, "Для ввода количества показываемых фотографий "
-                                               "введите число от 1 до {max_photo}")
+        bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
+                                               f"введите число от 1 до {max_photo}")
 
 
 @bot.message_handler(state=SearchParamState.complete)
