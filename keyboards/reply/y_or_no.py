@@ -1,5 +1,5 @@
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-from loader import bot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+
 
 
 """def y_or_no(question:str) -> InlineKeyboardMarkup:

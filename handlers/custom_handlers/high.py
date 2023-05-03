@@ -1,7 +1,26 @@
+
 from loader import bot
 from states.search_params import SearchParamState
 from telebot.types import Message
 from keyboards.reply.y_or_no import y_or_no
+from typing import Dict
+from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED
+import re
+
+city_pattern = CITY_TEMPLATE
+max_photo = MAX_PHOTO_DISPLAYED
+max_hotel = MAX_HOTEL_DISPLAYED
+
+
+def final_text(message: Message, data: Dict):
+
+    text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
+            f"Показать {data['hotels_num']} отеля" \
+            f"\nПоказывать {data['num_photo']} фото"
+
+    bot.send_message(message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
+                                                                        f"ДА - начать поиск\n "
+                                                                        f"НЕТ - ввести параметры заново"))
 
 
 @bot.message_handler(commands=["highprice"])
@@ -13,13 +32,15 @@ def highprice(message: Message):
 
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
-    if message.text.isalpha():
-        bot.send_message(message.from_user.id, "Спасибо, записал. Сколько отелей вывести? (не больше пяти, пожалуйста)")
+    if re.match(city_pattern, message.text):      # regexp here .  pattern imported from config
+        bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
+                                               f"(не больше {max_hotel}, пожалуйста)")
         bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['city'] = message.text
     else:
-        bot.send_message(message.from_user.id, "Название города может содержать только буквы латинского алфавита")
+        bot.send_message(message.from_user.id, "Название города может содержать только "
+                                               "буквы латинского алфавита, пробелы и тире")
 
 
 @bot.message_handler(state=SearchParamState.hotels_num)
@@ -32,45 +53,60 @@ def get_city(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['hotels_num'] = int(message.text)
     else:
-        bot.send_message(message.from_user.id, "Для ввода количества показываемых отелей введите число от 1 до 5")
+        bot.send_message(message.from_user.id, f"Для ввода количества показываемых отелей "
+                                               f"введите число от 1 до {max_hotel}")
 
 
 @bot.message_handler(state=SearchParamState.need_photo)
 def get_need_photo(message: Message) -> None:
     if message.text == 'ДА':
-        bot.send_message(message.from_user.id, "Спасибо, записал. Сколько фотографий показывать?(не больше четырех, пожалуйста)")
+        bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько фотографий показывать?"
+                                               f"(не больше {max_photo}, пожалуйста)")
         bot.set_state(message.from_user.id, SearchParamState.num_photo, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = True
-            print("Need Photo parameter", data["need_photo"])
+
     elif message.text == 'НЕТ':
-        bot.send_message(message.from_user.id, "Спасибо, записал. Вопросов больше не имею)")
+        bot.send_message(message.from_user.id, "Спасибо, записал. Итак, проверьте, пожалуйста, все ли верно:")
         bot.set_state(message.from_user.id, SearchParamState.complete, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = False
             data['num_photo'] = 0
-    print("Need Photo parameter", data["need_photo"])
+            final_text(message, data)
+    else:
+        bot.send_message(message.from_user.id, "Нужно ли показывать фотографии отелей?\n"
+                                               " Пожалуйста, ответьте ДА или НЕТ",
+                         reply_markup=y_or_no("Нужно ли показывать фотографии отелей? "))
 
 
 @bot.message_handler(state=SearchParamState.num_photo)
 def get_num_photo(message: Message) -> None:
-    if message.text.isdigit() and int(message.text) <= 4:
-        bot.send_message(message.from_user.id, "Спасибо, записал. Вопросов больше не имею)")
-        bot.set_state(message.from_user.id, SearchParamState.complete, message.chat.id)
+    if message.text.isdigit() and 0 < int(message.text) <= 4:
+        bot.send_message(message.from_user.id, "Спасибо, записал. Итак, проверьте, пожалуйста, все ли верно:")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            bot.set_state(message.from_user.id, SearchParamState.complete, message.chat.id)
             data['num_photo'] = int(message.text)
+            final_text(message, data)
     else:
-        bot.send_message(message.from_user.id, "Для ввода количества показываемых фотографий введите число от 1 до 5")
+        bot.send_message(message.from_user.id, "Для ввода количества показываемых фотографий "
+                                               "введите число от 1 до {max_photo}")
 
 
 @bot.message_handler(state=SearchParamState.complete)
 def params_ready(message: Message) -> None:
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+    if message.text == 'ДА':
+        pass
+    elif message.text == 'НЕТ':
+        bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
+        bot.send_message(message.from_user.id, f'Хммм... Хорошо, {message.from_user.first_name}, попробуем еще раз.\n'
+                                               f'Введите город для поиска отелей. ')
+    else:
+        bot.send_message(message.from_user.id, "Пожалуйста, ответьте ДА или НЕТ")
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            final_text(message, data)
 
-        text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
-               f"Показать {data['hotels_num']} отелей" \
-                f"\nПоказывать {data['num_photo']} фото \n"
-        bot.send_message(message.from_user.id, text)
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        print(data)
 
 
 """ После ввода команды у пользователя запрашивается:
@@ -81,11 +117,4 @@ def params_ready(message: Message) -> None:
 a. При положительном ответе пользователь также вводит количество
 необходимых фотографий (не больше заранее определённого
 максимума)
-  city = State()
-    hotels_num = State()
-    need_photo = State()
-    num_photo = State()
-    количество отелей, необходимость показа фото и их количество\n'
-                                           f'В ответ получите список отелей с самой высокой ценой
-    
 """
