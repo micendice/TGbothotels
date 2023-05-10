@@ -102,7 +102,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-botvenv/
+/botvenv/
 .venv
 */.env
 env/
@@ -130,3 +130,6 @@ dmypy.json
 .pyre/
 .idea/*
 .env
+/botvenv/
+/botvenv/
+/botvenv/
