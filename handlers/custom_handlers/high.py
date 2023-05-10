@@ -7,9 +7,6 @@ from typing import Dict
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED
 import re
 
-city_pattern = CITY_TEMPLATE
-max_photo = MAX_PHOTO_DISPLAYED
-max_hotel = MAX_HOTEL_DISPLAYED
 
 
 def final_text(message: Message, data: Dict):
@@ -32,9 +29,9 @@ def highprice(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
-    if re.match(city_pattern, message.text):      # regexp here .  pattern imported from config
+    if re.match(CITY_TEMPLATE, message.text):      # regexp here .  pattern imported from config
         bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
-                                               f"(не больше {max_hotel}, пожалуйста)")
+                                               f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
         bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['city'] = message.text
@@ -45,7 +42,7 @@ def get_city(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.hotels_num)
 def get_city(message: Message) -> None:
-    if message.text.isdigit() and int(message.text) <= max_hotel:
+    if message.text.isdigit() and int(message.text) <= MAX_HOTEL_DISPLAYED:
         bot.send_message(message.from_user.id, "Спасибо, записал. "
                                                "Нужно ли показывать фотографии отелей? Нажмите 'Да' или 'Нет'",
                          reply_markup=y_or_no("Нужно ли показывать фотографии отелей? "))
@@ -54,14 +51,14 @@ def get_city(message: Message) -> None:
             data['hotels_num'] = int(message.text)
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых отелей "
-                                               f"введите число от 1 до {max_hotel}")
+                                               f"введите число от 1 до {MAX_HOTEL_DISPLAYED}")
 
 
 @bot.message_handler(state=SearchParamState.need_photo)
 def get_need_photo(message: Message) -> None:
     if message.text == 'ДА':
         bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько фотографий показывать?"
-                                               f"(не больше {max_photo}, пожалуйста)")
+                                               f"(не больше {MAX_PHOTO_DISPLAYED}, пожалуйста)")
         bot.set_state(message.from_user.id, SearchParamState.num_photo, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = True
@@ -89,7 +86,7 @@ def get_num_photo(message: Message) -> None:
             final_text(message, data)
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
-                                               f"введите число от 1 до {max_photo}")
+                                               f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
 
 @bot.message_handler(state=SearchParamState.complete)
