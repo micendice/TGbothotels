@@ -6,6 +6,7 @@ class SearchParamState(StatesGroup):
     hotels_num = State()
     need_photo = State()
     num_photo = State()
+    calendar_dates = State()
     complete = State()
 
 
