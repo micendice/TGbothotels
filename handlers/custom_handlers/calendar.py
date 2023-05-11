@@ -14,10 +14,11 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
-def calendar_callback(c):
-    start_date = datetime.date.today()
-    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-    result, key, step = DetailedTelegramCalendar(min_date=start_date, max_date=final_date, locale="ru").process(c.data)
+def calendar_callback(c, calendar_id: str, start_date, final_date ):
+    """start_date = datetime.date.today()
+    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date"""
+    result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date, max_date=final_date,
+                                                 locale="ru").process(c.data)
     if not result and key:
         bot.edit_message_text(f"Select {LSTEP[step]}",
                               c.message.chat.id,
@@ -28,3 +29,4 @@ def calendar_callback(c):
                               c.message.chat.id,
                               c.message.message_id)
         print(result)
+        return result

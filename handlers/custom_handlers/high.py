@@ -6,12 +6,11 @@ from keyboards.reply.y_or_no import y_or_no
 from typing import Dict, Any
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL
 import re
-from calendar import start_calendar, calendar_callback
+from handlers.custom_handlers.calendar import start_calendar, calendar_callback
 
 import datetime
 
 today = datetime.date.today()
-max_date = (today + datetime.timedelta(days=SEARCH_INTERVAL))
 
 def final_text(message: Message, data: Dict):
 
@@ -23,8 +22,6 @@ def final_text(message: Message, data: Dict):
     bot.send_message(message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
                                                                         f"ДА - начать поиск\n "
                                                                         f"НЕТ - ввести параметры заново"))
-
-
 
 
 @bot.message_handler(commands=["highprice"])
@@ -71,14 +68,15 @@ def get_need_photo(message: Message) -> None:
             data['need_photo'] = True
 
     elif message.text == 'НЕТ':
-        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания")
-        bot.set_state(message.from_user.id, SearchParamState.calendar_dates, message.chat.id)
+        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания."
+                                               " Введите дату заезда")
+        bot.set_state(message.from_user.id, SearchParamState.calendar_checkin, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = False
             data['num_photo'] = 0
         start_date = today
         final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-        return start_calendar(message, 'checkin_calender', start_date, final_date)                 #запуск календаря
+        data['checkin'] = start_calendar(message, 'checkin_calender', start_date, final_date)                 #запуск календаря
 
     else:
         bot.send_message(message.from_user.id, "Нужно ли показывать фотографии отелей?\n"
@@ -89,9 +87,10 @@ def get_need_photo(message: Message) -> None:
 @bot.message_handler(state=SearchParamState.num_photo)
 def get_num_photo(message: Message) -> None:
     if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
-        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания")
+        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
+                                               "Введите дату заезда")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            bot.set_state(message.from_user.id, SearchParamState.calendar_dates, message.chat.id)
+            bot.set_state(message.from_user.id, SearchParamState.calendar_checkin, message.chat.id)
             data['num_photo'] = int(message.text)
             start_date = today
             final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
@@ -101,16 +100,42 @@ def get_num_photo(message: Message) -> None:
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
 
-@bot.message_handler(state=SearchParamState.calendar_dates)
-def choose_dates(message: Message) -> None:
-    if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
-        bot.send_message(message.from_user.id, "Спасибо, записал. Итак, проверьте, пожалуйста, все ли верно:")
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            bot.set_state(message.from_user.id, SearchParamState.complete, message.chat.id)
-            data['num_photo'] = int(message.text)
-            final_text(message, data)
-    else:
-        bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор дат проживания ")
+@bot.message_handler(state=SearchParamState.calendar_checkin) #   в этом состоянии callback запускаем !
+def choose_checkin_date(message: Message) -> None:
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        start_date = today
+        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+        data['checkin'] = calendar_callback(message, 'checkin_calender', start_date, final_date) # try need to be added
+
+        if data['checkin']: #формат вывода календаря не факт что подходит
+            bot.send_message(message.from_user.id, "Введите дату выезда")
+            bot.set_state(message.from_user.id, SearchParamState.calendar_checkout, message.chat.id)
+            start_date = data['checkin']
+            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+            return start_calendar(message, 'checkout_calender', start_date, final_date)
+        else:
+            bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор даты заезда")
+            return start_calendar(message, 'checkin_calender', start_date, final_date)
+
+
+@bot.message_handler(state=SearchParamState.calendar_checkout)
+def choose_checkout_date(message: Message) -> None:
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        start_date = data['checkin']
+        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+
+        data['checkout'] = calendar_callback(message, 'checkout_calender', start_date, final_date)  # try need to be added
+
+        if data['checkout']:
+            start_date = data['checkin']
+            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+
+
+            bot.set_state(message.from_user.id, SearchParamState.calendar_checkout, message.chat.id)
+            bot.send_message(message.from_user.id, "Введите дату выезда")
+        else:
+            bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор дат проживания ")
+
 
 
 @bot.message_handler(state=SearchParamState.complete)
