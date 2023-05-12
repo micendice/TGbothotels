@@ -1,27 +1,39 @@
-
+from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 from loader import bot
 from states.search_params import SearchParamState
-from telebot.types import Message
+from telebot.types import Message, CallbackQuery
 from keyboards.reply.y_or_no import y_or_no
 from typing import Dict, Any
-from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL
+from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY
 import re
-from handlers.custom_handlers.calendar import start_calendar, calendar_callback
-
+"""from handlers.custom_handlers.calendar import start_calendar, calendar_callback"""
 import datetime
 
 today = datetime.date.today()
+
 
 def final_text(message: Message, data: Dict):
 
     text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
             f"Показать {data['hotels_num']} отеля" \
             f"\nПоказывать {data['num_photo']} фото" \
-           f"\nДаты проживания: c {data['check_in']} по {data['check_out']}"
+           f"\nДаты проживания: c {data['checkin']} по {data['checkout']}"
 
     bot.send_message(message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
                                                                         f"ДА - начать поиск\n "
                                                                         f"НЕТ - ввести параметры заново"))
+
+
+def start_calendar(message: Message, calendar_id: str, start_date, final_date):
+    calendar, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date,
+                                              max_date=final_date, locale="ru").build()
+
+    bot.send_message(message.chat.id,
+                     f"Select {LSTEP[step]}",
+                     reply_markup=calendar)
+    return start_date
+
+
 
 
 @bot.message_handler(commands=["highprice"])
@@ -76,7 +88,7 @@ def get_need_photo(message: Message) -> None:
             data['num_photo'] = 0
         start_date = today
         final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-        data['checkin'] = start_calendar(message, 'checkin_calender', start_date, final_date)                 #запуск календаря
+        return start_calendar(message, 'checkin', start_date, final_date)               #запуск календаря
 
     else:
         bot.send_message(message.from_user.id, "Нужно ли показывать фотографии отелей?\n"
@@ -94,20 +106,75 @@ def get_num_photo(message: Message) -> None:
             data['num_photo'] = int(message.text)
             start_date = today
             final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-            return start_calendar(message, 'checkin_calender', start_date, final_date)               # Запуск календаря
+            return start_calendar(message, 'checkin', start_date, final_date)               # Запуск календаря
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
 
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id='checkin'))
+def calendar_callback_in(c, calendar_id: str = 'checkin', start_date=today):
+    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+
+    result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date, max_date=final_date,
+                                                 locale="ru").process(c.data)
+    if not result and key:
+        bot.edit_message_text(f"Выберите {LSTEP[step]}",
+                              c.message.chat.id,
+                              c.message.message_id,
+                              reply_markup=key)
+    elif result:
+        bot.edit_message_text(f"Вы выбрали {result} \nТеперь выберите дату выезда",
+                              c.message.chat.id,
+                              c.message.message_id)
+
+        with bot.retrieve_data(c.from_user.id) as data:
+            data[calendar_id] = result
+            print(data)
+            start_date = result
+            final_date = datetime.timedelta(days=MAX_STAY) + start_date
+            return start_calendar(c.message, 'checkout', start_date, final_date)
+
+
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id='checkout'))
+def calendar_callback_out(c, calendar_id: str = 'checkout'):
+    with bot.retrieve_data(c.from_user.id) as data:
+        start_date = data['checkin']
+        final_date = datetime.timedelta(days=MAX_STAY) + start_date
+
+        result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date, max_date=final_date,
+                                                     locale="ru").process(c.data)
+        if not result and key:
+            bot.edit_message_text(f"Выберите {LSTEP[step]}",
+                                  c.message.chat.id,
+                                  c.message.message_id,
+                                  reply_markup=key)
+        elif result:
+            bot.edit_message_text(f"Вы выбрали {result} ",
+                                  c.message.chat.id,
+                                  c.message.message_id)
+            data[calendar_id] = result
+            bot.set_state(c.message.from_user.id, SearchParamState.complete, c.message.chat.id)
+            text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
+                   f"Показать {data['hotels_num']} отеля" \
+                   f"\nПоказывать {data['num_photo']} фото" \
+                   f"\nДаты проживания: c {data['checkin']} по {data['checkout']}"
+
+            bot.send_message(c.message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
+                                                                              f"ДА - начать поиск\n "
+                                                                              f"НЕТ - ввести параметры заново"))
+
+
+"""
 @bot.message_handler(state=SearchParamState.calendar_checkin) #   в этом состоянии callback запускаем !
 def choose_checkin_date(message: Message) -> None:
+    start_date = today
+    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+    calendar_callback(message, 'checkin', start_date, final_date)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        start_date = today
-        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-        data['checkin'] = calendar_callback(message, 'checkin_calender', start_date, final_date) # try need to be added
 
-        if data['checkin']: #формат вывода календаря не факт что подходит
+
+        if data['checkin']:
             bot.send_message(message.from_user.id, "Введите дату выезда")
             bot.set_state(message.from_user.id, SearchParamState.calendar_checkout, message.chat.id)
             start_date = data['checkin']
@@ -136,7 +203,7 @@ def choose_checkout_date(message: Message) -> None:
         else:
             bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор дат проживания ")
 
-
+"""
 
 @bot.message_handler(state=SearchParamState.complete)
 def params_ready(message: Message) -> None:

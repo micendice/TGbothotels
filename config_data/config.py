@@ -25,6 +25,7 @@ CITY_TEMPLATE = r'[a-z,A-Z,\s,-]'   # city name check
 MAX_PHOTO_DISPLAYED: int = 5     # max number of displayed photo
 MAX_HOTEL_DISPLAYED: int = 5     # max number of displayed hotels
 SEARCH_INTERVAL: int = 180          # max days search depth
+MAX_STAY: int = 60              # max stay duration
 
 
 """
