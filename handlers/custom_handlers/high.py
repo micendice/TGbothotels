@@ -34,8 +34,6 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     return start_date
 
 
-
-
 @bot.message_handler(commands=["highprice"])
 def highprice(message: Message) -> None:
     bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
@@ -57,7 +55,7 @@ def get_city(message: Message) -> None:
 
 
 @bot.message_handler(state=SearchParamState.hotels_num)
-def get_city(message: Message) -> None:
+def hotels_num(message: Message) -> None:
     if message.text.isdigit() and int(message.text) <= MAX_HOTEL_DISPLAYED:
         bot.send_message(message.from_user.id, "Спасибо, записал. "
                                                "Нужно ли показывать фотографии отелей? Нажмите 'Да' или 'Нет'",
@@ -154,61 +152,26 @@ def calendar_callback_out(c, calendar_id: str = 'checkout'):
                                   c.message.chat.id,
                                   c.message.message_id)
             data[calendar_id] = result
-            bot.set_state(c.message.from_user.id, SearchParamState.complete, c.message.chat.id)
+            bot.set_state(c.message.chat.id, SearchParamState.complete, c.message.chat.id)
             text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
                    f"Показать {data['hotels_num']} отеля" \
                    f"\nПоказывать {data['num_photo']} фото" \
-                   f"\nДаты проживания: c {data['checkin']} по {data['checkout']}"
+                   f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
+                   f"Всё верно?\n" \
+                   f"ДА - начать поиск\n" \
+                   f"НЕТ - ввести параметры заново"
 
-            bot.send_message(c.message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
+            bot.send_message(c.message.chat.id, text, reply_markup=y_or_no(f"Всё верно?\n "
                                                                               f"ДА - начать поиск\n "
                                                                               f"НЕТ - ввести параметры заново"))
 
 
-"""
-@bot.message_handler(state=SearchParamState.calendar_checkin) #   в этом состоянии callback запускаем !
-def choose_checkin_date(message: Message) -> None:
-    start_date = today
-    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-    calendar_callback(message, 'checkin', start_date, final_date)
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-
-
-        if data['checkin']:
-            bot.send_message(message.from_user.id, "Введите дату выезда")
-            bot.set_state(message.from_user.id, SearchParamState.calendar_checkout, message.chat.id)
-            start_date = data['checkin']
-            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-            return start_calendar(message, 'checkout_calender', start_date, final_date)
-        else:
-            bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор даты заезда")
-            return start_calendar(message, 'checkin_calender', start_date, final_date)
-
-
-@bot.message_handler(state=SearchParamState.calendar_checkout)
-def choose_checkout_date(message: Message) -> None:
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        start_date = data['checkin']
-        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-
-        data['checkout'] = calendar_callback(message, 'checkout_calender', start_date, final_date)  # try need to be added
-
-        if data['checkout']:
-            start_date = data['checkin']
-            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-
-
-            bot.set_state(message.from_user.id, SearchParamState.calendar_checkout, message.chat.id)
-            bot.send_message(message.from_user.id, "Введите дату выезда")
-        else:
-            bot.send_message(message.from_user.id, f"С датами что-то не так, повторите выбор дат проживания ")
-
-"""
-
 @bot.message_handler(state=SearchParamState.complete)
 def params_ready(message: Message) -> None:
+
     if message.text == 'ДА':
-        pass
+        print('Starting search procedures. building request first')
+
     elif message.text == 'НЕТ':
         bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
         bot.send_message(message.from_user.id, f'Хммм... Хорошо, {message.from_user.first_name}, попробуем еще раз.\n'
