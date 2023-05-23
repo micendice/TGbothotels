@@ -1,6 +1,6 @@
 
 from site_API.utils.site_api_handler import SiteApiInterface
-from settings import SiteSettings
+from .settings import SiteSettings
 
 site = SiteSettings()
 
@@ -9,9 +9,8 @@ headers = {
 	"X-RapidAPI-Host": site.host_api
     }
 
-url = "https://" + site.host_api
+base_url = "https://" + site.host_api
 
-params = {"fragment":"true","json":"true"}
 
 site_api = SiteApiInterface()
 

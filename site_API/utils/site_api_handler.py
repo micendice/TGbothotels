@@ -1,17 +1,56 @@
 import requests
 from typing import Dict
 import urllib.parse
+from ..settings import SiteSettings
+import json
+site = SiteSettings()
 
+st_headers = {
+	"X-RapidAPI-Key": site.api_key.get_secret_value(),
+	"X-RapidAPI-Host": site.host_api
+    }
+
+base_url = "https://" + site.host_api
+payload = {
+    "currency": "USD",
+    "eapid": 1,
+    "locale": "en_US",
+    "siteId": 300000001,
+    "destination": { "regionId": "6054439" },
+    "checkInDate": {
+        "day": 10,
+        "month": 10,
+        "year": 2022
+    },
+    "checkOutDate": {
+        "day": 15,
+        "month": 10,
+        "year": 2022
+    },
+    "rooms": [
+        {
+            "adults": 2,
+            "children": [{"age": 5}, {"age": 7}]
+        }
+    ],
+    "resultsStartingIndex": 0,
+    "resultsSize": 200,
+    "sort": "PRICE_LOW_TO_HIGH",
+    "filters": { "price": {
+        "max": 150,
+        "min": 100
+    }}
+}
 
 def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: int):
     if method == 'get':
-
+        print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params- (querystring): {params}\ntimeout: {timeout}')
         response = requests.request(
-        method,
-        url,
-        headers=headers,
-        params=params,
-        timeout=timeout
+            method,
+            url,
+            headers=headers,
+            params=params,
+            timeout=timeout
         )
     elif method == "post":
         response = requests.request(
@@ -25,15 +64,27 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
     status_code = response.status_code
 
     if 200 <= status_code <= 399:
-        return response
+        return response.text
     return status_code
 
 
-def _find_location(base_url: str, location:str, headers: Dict, timeout:int, func=_make_response):
-    url = urllib.parse.urljoin(base_url, "location/v3/search/", True)
-    querystring = {"q": location, "locale": "en_US", "langid":"1033", "siteid":"30000001"}
+def _find_location(location: str, base: str = base_url, headers: Dict = st_headers, timeout: int = 1000, func=_make_response):
+    print('Function _find_location called')
+    url = urllib.parse.urljoin(base, "locations/v3/search", True)
+
+    querystring = {"q": location, "locale": "en_US", "langid": "1033", "siteid": "300000001"}
+    print(f'url: {str(url)}\nquerystring: {querystring}\n')
     response = func("get", url, headers, querystring, timeout)
-    return response
+    response_dict = json.loads(response)
+    """print(response)"""
+    print(response_dict['rc'], response_dict['rid'])
+
+    if response_dict['rc'] == 'OK':
+        result = response_dict['rid']
+    else:
+        result = None
+
+    return result
 
 """url = "https://hotels4.p.rapidapi.com/locations/v3/search"
 
@@ -45,10 +96,10 @@ headers = {
 }
 
 response = requests.get(url, headers=headers, params=querystring)"""
-def _hotels_list(base_url: str, headers: Dict, params: Dict, timeout: int, func=_make_response)
-    url = urllib.parse.urljoin(base_url, "properties/v2/list", True)
+def _hotels_list(params: Dict, base: str, headers: Dict, timeout: int, func=_make_response):
+    url = urllib.parse.urljoin(base, "properties/v2/list", True)
     headers["content-type"] = "application/json"
-    payload =
+    payload = " "
 
     response = func("post", url, headers, payload, timeout)
 
@@ -94,30 +145,22 @@ response = requests.post(url, json=payload, headers=headers)
 """
 
 
-
-
-
-def _get_math_fact(method: str, url: str, headers: Dict, params: Dict, number: int,
-                   timeout: int, func=_make_response):
-    url = f"{url}/{number}/math"
-    response = func(method, url, headers=headers, params=params, timeout=timeout)
-
-    return response
-
-
 class SiteApiInterface:
 
     @staticmethod
-    def find_location():
-        return _find_location
+    def find_location(location):
+        return _find_location(location)
 
     @staticmethod
     def get_math_fact():
-        return _get_math_fact
+        return _hotels_list
+
+
+site_api = SiteApiInterface()
 
 
 if __name__ == "__main__":
     _make_response()
-    _get_math_fact()
-    _get_location_search()
+    _find_location()
+    _hotels_list()
     SiteApiInterface()

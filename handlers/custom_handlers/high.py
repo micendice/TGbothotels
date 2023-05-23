@@ -6,8 +6,8 @@ from keyboards.reply.y_or_no import y_or_no
 from typing import Dict, Any
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY
 import re
-"""from handlers.custom_handlers.calendar import start_calendar, calendar_callback"""
 import datetime
+from site_API.utils.site_api_handler import site_api
 
 today = datetime.date.today()
 
@@ -44,11 +44,19 @@ def highprice(message: Message) -> None:
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
     if re.match(CITY_TEMPLATE, message.text):      # regexp here .  pattern imported from config
-        bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
+        location = site_api.find_location(message.text.lower())
+
+        if location:                    # checking site database - if the location exist
+            bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
                                                f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
-        bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['city'] = message.text
+            bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
+            with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+                data['city'] = message.text.lower()
+                data['rid'] = location
+
+        else:
+            print("Google haven't found such place. Город не найден")
+
     else:
         bot.send_message(message.from_user.id, "Название города может содержать только "
                                                "буквы латинского алфавита, пробелы и тире")
