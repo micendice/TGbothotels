@@ -1,7 +1,7 @@
 import requests
 from typing import Dict
 import urllib.parse
-from ..settings import SiteSettings
+from ..settings import SiteSettings, payload, url_loc_search
 import json
 site = SiteSettings()
 
@@ -11,36 +11,6 @@ st_headers = {
     }
 
 base_url = "https://" + site.host_api
-payload = {
-    "currency": "USD",
-    "eapid": 1,
-    "locale": "en_US",
-    "siteId": 300000001,
-    "destination": { "regionId": "6054439" },
-    "checkInDate": {
-        "day": 10,
-        "month": 10,
-        "year": 2022
-    },
-    "checkOutDate": {
-        "day": 15,
-        "month": 10,
-        "year": 2022
-    },
-    "rooms": [
-        {
-            "adults": 2,
-            "children": [{"age": 5}, {"age": 7}]
-        }
-    ],
-    "resultsStartingIndex": 0,
-    "resultsSize": 200,
-    "sort": "PRICE_LOW_TO_HIGH",
-    "filters": { "price": {
-        "max": 150,
-        "min": 100
-    }}
-}
 
 def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: int):
     if method == 'get':
@@ -70,7 +40,7 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
 
 def _find_location(location: str, base: str = base_url, headers: Dict = st_headers, timeout: int = 1000, func=_make_response):
     print('Function _find_location called')
-    url = urllib.parse.urljoin(base, "locations/v3/search", True)
+    url = urllib.parse.urljoin(base, url_loc_search , True)
 
     querystring = {"q": location, "locale": "en_US", "langid": "1033", "siteid": "300000001"}
     print(f'url: {str(url)}\nquerystring: {querystring}\n')
