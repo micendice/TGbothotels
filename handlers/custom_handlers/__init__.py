@@ -4,3 +4,4 @@ from . import low
 from . import history
 from . import survey
 from .import calendar
+from .import display_results

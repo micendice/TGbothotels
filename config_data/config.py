@@ -27,6 +27,37 @@ MAX_HOTEL_DISPLAYED: int = 5     # max number of displayed hotels
 SEARCH_INTERVAL: int = 180          # max days search depth
 MAX_STAY: int = 60              # max stay duration
 
+payload = {
+    "currency": "USD",
+    "eapid": 1,
+    "locale": "en_US",
+    "siteId": 300000001,
+    "destination": { "regionId": "6054439" },
+    "checkInDate": {
+        "day": 10,
+        "month": 10,
+        "year": 2022
+    },
+    "checkOutDate": {
+        "day": 15,
+        "month": 10,
+        "year": 2022
+    },
+    "rooms": [
+        {
+            "adults": 2,
+            "children": [{"age": 13}, {"age": 0}]
+        }
+    ],
+    "resultsStartingIndex": 0,
+    "resultsSize": 200,
+    "sort": "PRICE_LOW_TO_HIGH",
+    "filters": { "price": {
+        "max": 150,
+        "min": 100
+    }}
+}
+
 
 """
 User info for States

@@ -1,7 +1,7 @@
 import requests
 from typing import Dict
 import urllib.parse
-from ..settings import SiteSettings, payload, url_loc_search
+from ..settings import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary
 import json
 site = SiteSettings()
 
@@ -23,11 +23,12 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
             timeout=timeout
         )
     elif method == "post":
+        print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params-(payload) : {params}\ntimeout: {timeout}')
         response = requests.request(
             method,
             url,
-            json=headers,
-            params=params,
+            json=params,
+            headers=headers,
             timeout=timeout
         )
 
@@ -38,8 +39,8 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
     return status_code
 
 
-def _find_location(location: str, base: str = base_url, headers: Dict = st_headers, timeout: int = 1000, func=_make_response):
-    print('Function _find_location called')
+def _find_location(location: str, base: str = base_url, headers: Dict = st_headers,
+                   timeout: int = 1000, func=_make_response):
     url = urllib.parse.urljoin(base, url_loc_search , True)
 
     querystring = {"q": location, "locale": "en_US", "langid": "1033", "siteid": "300000001"}
@@ -50,70 +51,49 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
     print(response_dict['rc'], response_dict['rid'])
 
     if response_dict['rc'] == 'OK':
-        result = response_dict['rid']
+        gaiaId = response_dict["sr"][0]["gaiaId"]
+        coordinates = response_dict["sr"][0]["coordinates"]
+        result = gaiaId
+        res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
     else:
         result = None
 
     return result
 
-"""url = "https://hotels4.p.rapidapi.com/locations/v3/search"
-
-querystring = {"q":"new york","locale":"en_US","langid":"1033","siteid":"300000001"}
-
-headers = {
-	"X-RapidAPI-Key": "6741070c10mshc69db9dd5f323c3p1a91c5jsnaddb2d72834a",
-	"X-RapidAPI-Host": "hotels4.p.rapidapi.com"
-}
-
-response = requests.get(url, headers=headers, params=querystring)"""
-def _hotels_list(params: Dict, base: str, headers: Dict, timeout: int, func=_make_response):
-    url = urllib.parse.urljoin(base, "properties/v2/list", True)
+# Нет!  надо будет сортировать все отели по цене!!! пейлоад с большим количеством сделать, отсортировать как надо и взять первые несколько
+def _hotels_list(payload: Dict, base: str = base_url, headers: Dict = st_headers,
+                 timeout: int = 1000, func=_make_response):
+    url = urllib.parse.urljoin(base, url_hotels_list, True)
     headers["content-type"] = "application/json"
-    payload = " "
-
     response = func("post", url, headers, payload, timeout)
+    response_dict = json.loads(response)
+    hotels_id_name = dict()
+    properties_list = response_dict["data"]["propertySearch"]["properties"]
 
-"""url = "https://hotels4.p.rapidapi.com/properties/v2/list"
+    for item in properties_list:
+        hotels_id_name[item["id"]] = item["name"]
+    return hotels_id_name
 
-payload = {
-	"currency": "USD",
-	"eapid": 1,
-	"locale": "en_US",
-	"siteId": 300000001,
-	"destination": { "regionId": "6054439" },
-	"checkInDate": {
-		"day": 10,
-		"month": 10,
-		"year": 2022
-	},
-	"checkOutDate": {
-		"day": 15,
-		"month": 10,
-		"year": 2022
-	},
-	"rooms": [
-		{
-			"adults": 2,
-			"children": [{ "age": 5 }, { "age": 7 }]
-		}
-	],
-	"resultsStartingIndex": 0,
-	"resultsSize": 200,
-	"sort": "PRICE_LOW_TO_HIGH",
-	"filters": { "price": {
-			"max": 150,
-			"min": 100
-		} }
-}
-headers = {
-	"content-type": "application/json",
-	"X-RapidAPI-Key": "6741070c10mshc69db9dd5f323c3p1a91c5jsnaddb2d72834a",
-	"X-RapidAPI-Host": "hotels4.p.rapidapi.com"
-}
 
-response = requests.post(url, json=payload, headers=headers)
-"""
+def _get_hotel_summary(payload: Dict, photo_num: int, base: str = base_url,
+                    headers: Dict = st_header, timeout: int = 1000, func=_make_response):
+    url = urllib.parse.urljoin(base, url_hotel_summary, True)
+    headers["content-type"] = "application/json"
+    response = func("post", url, headers, payload, timeout)
+    response_dict = json.loads(response)
+    hotel_details_dict = response_dict[""]
 
+    short_descr = hotel_details_dict["data"]["propertyInfo"]["summary"]["tagline"]
+    addressline = hotel_details_dict["data"]["propertyInfo"]["summary"]["location"]["address"]["addressLine"]
+    photo_urls = list()
+    if photo_num > 0:
+        for i_photo in range(photo_num):
+            urlPhoto = hotel_details_dict["data"]["propertyInfo"]["propertyGallery"]["images"][i_photo]["image"]["url"]  # images - list of dicts
+            photo_urls.append(urlPhoto)
+
+
+def _get_price(payload, headers, params, timeout):
+    pass
 
 class SiteApiInterface:
 
@@ -122,8 +102,8 @@ class SiteApiInterface:
         return _find_location(location)
 
     @staticmethod
-    def get_math_fact():
-        return _hotels_list
+    def get_hotels_list(payload):
+        return _hotels_list(payload)
 
 
 site_api = SiteApiInterface()
