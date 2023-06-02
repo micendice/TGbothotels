@@ -5,7 +5,7 @@ from telebot.types import Message, CallbackQuery
 from keyboards.reply.y_or_no import y_or_no
 from typing import Dict, Any
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY
-from site_API.settings import payload_hotels_list
+from site_API.settings import payload_hotels_list, payload_summary, payload_get_offer
 import re
 import datetime
 from site_API.utils.site_api_handler import site_api
@@ -192,26 +192,49 @@ def params_ready(message: Message) -> None:
             final_text(message, data)
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        print(data)
+
         payload_hotels_list["destination"]["regionId"] = data["regionId"]
+
         payload_hotels_list["checkInDate"]["day"] = data["checkin"].day
         payload_hotels_list["checkInDate"]["month"] = data["checkin"].month
         payload_hotels_list["checkInDate"]["year"] = data["checkin"].year
         payload_hotels_list["checkOutDate"]["day"] = data["checkout"].day
         payload_hotels_list["checkOutDate"]["month"] = data["checkout"].month
         payload_hotels_list["checkOutDate"]["year"] = data["checkout"].year
-        """payload_hotels_list["resultsSize"] = data["hotels_num"]"""
+
+        payload_hotels_list["resultsSize"] = data["hotels_num"]
         payload_hotels_list["sort"] = sort_command
         payload_hotels_list["filters"] = filters_command
 
-        list_of_hotels = site_api.get_hotels_list(payload_hotels_list)
+        data["checkInDate"] = payload_hotels_list["checkInDate"]
+        data["checkOutDate"] = payload_hotels_list["checkOutDate"]
+
+        data["hotels_list"] = site_api.get_hotels_list(payload_hotels_list)
+
+        #print(data)
         # отдельно форматированный вывод информации медиа пак.
         # Получает data и формирует запрос по отелям и фото. После этого формирует пак и выводит в ТГ
         # Пока здесь пропишу, а там посмотрим какая декомпозиция лучше ляжет
-        print(list_of_hotels)
-        if data["need_photo"]:
-            pass
+        """print(data["hotels_list"])"""
+        payload_get_offer["checkInDate"] = data["checkInDate"]
+        payload_get_offer["checkOutDate"] = data["checkOutDate"]
+        payload_get_offer["destination"]["regionId"] = data["regionId"]
+        num_photo = data["num_photo"]
 
+        for hotel_id in data["hotels_list"].keys():
+            payload_summary["propertyId"] = hotel_id
+            payload_get_offer["propertyId"] = hotel_id
+
+            hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
+            hotel_price_dict = site_api.get_hotel_price(payload_get_offer)
+
+            data["hotels_list"][hotel_id]["short_descr"] = hotel_summary_dict["short_descr"]
+            data["hotels_list"][hotel_id]["addressline"] = hotel_summary_dict["addressline"]
+            data["hotels_list"][hotel_id]["accomodation_price"] = hotel_price_dict
+            if data["need_photo"]:
+                data["hotels_list"][hotel_id]["photo_urls"] = hotel_summary_dict["urlphoto"]
+
+        print(data)
 
 
 """ После ввода команды у пользователя запрашивается:
