@@ -2,7 +2,7 @@ from datetime import datetime
 
 import peewee as pw
 
-db = pw.SqliteDatabase('lecture.db')
+db = pw.SqliteDatabase('querylog11.db')
 
 class ModelBase(pw.Model):
     created_at = pw.DateField(default=datetime.now())
@@ -12,6 +12,17 @@ class ModelBase(pw.Model):
 
 
 class History(ModelBase):
-    number = pw.TextField()
-    message = pw.TextField()
+    command = pw.TextField()
+    city = pw.TextField()
+    hotels_num = pw.TextField()
+    num_photo = pw.TextField()
+    check_in_date = pw.DateField()
+    check_out_date = pw.DateField()
+
+    full_result = pw.TextField()
+    result_descr = pw.TextField()
+
+
+
+
     #username = pw.TextField()

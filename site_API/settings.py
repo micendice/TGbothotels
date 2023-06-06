@@ -10,8 +10,7 @@ class SiteSettings(BaseSettings):
     host_api: StrictStr = os.getenv("HOST_API", None)
 
 
-rooms_payload = {"adults": 2, "children": [{"age": 13}, {"age": 5}]}
-
+rooms_payload = [{"adults": 2, "children": [{"age": 13}, {"age": 5}]}]
 payload_hotels_list = {
     "currency": "USD",
     "eapid": 1,
@@ -37,7 +36,6 @@ payload_hotels_list = {
         "min": 10
     }}
 }
-
 payload_hotel_details = {"currency": "USD", "eapid": 7, "locale": "en_US", "siteId": 300000001, "propertyId": "9209612"}
 payload_summary = {"currency": "USD", "eapid": 1, "locale": "en_US", "siteId": 300000001, "propertyId": "9209612"}
 payload_get_offer = {

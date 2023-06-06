@@ -17,7 +17,7 @@ def _retrieve_all_data(db: db, model: T, *columns: ModelBase) -> ModelSelect:
     return response
 
 
-class CRUDInterface():
+class CRUDInterface:
     @staticmethod
     def create():
         return _store_data
@@ -25,7 +25,6 @@ class CRUDInterface():
     @staticmethod
     def retrieve():
         return _retrieve_all_data
-
 
     if __name__ == '*__main__*':
         _store_data()

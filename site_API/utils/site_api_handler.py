@@ -23,7 +23,7 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
             timeout=timeout
         )
     elif method == "post":
-        """print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params-(payload) : {params}\ntimeout: {timeout}')"""
+        print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params-(payload) : {params}\ntimeout: {timeout}')
         response = requests.request(
             method,
             url,
@@ -33,12 +33,14 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
         )
 
     status_code = response.status_code
+    print(status_code)
+    """print(response.text)"""
 
-    if 200 <= status_code <= 399:
+    if status_code == 200:
         return response.text
     else:
         print(response)
-    return status_code
+    #return status_code
 
 
 def _find_location(location: str, base: str = base_url, headers: Dict = st_headers,
@@ -108,13 +110,15 @@ def _hotel_price(payload: Dict, base: str = base_url,
         result = response_dict["data"]["propertyOffers"]["errorMessage"]["title"]["text"]
         print(error_message)
     else:
-        accomodation_price = dict()
+        """accomodation_price = dict()
         accomodation_price["total_price"] =\
             response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["price"]["total"][
             "amount"]
         accomodation_price["totalPriceMessage"] =\
+            response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]"""
+        accomodation_price = \
             response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]
-        print(accomodation_price)
+        #print(accomodation_price)
         result = accomodation_price
 
     return result

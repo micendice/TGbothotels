@@ -1,18 +1,25 @@
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 from loader import bot
 from states.search_params import SearchParamState
-from telebot.types import Message, CallbackQuery
+from telebot.types import Message, InputMediaPhoto
+
 from keyboards.reply.y_or_no import y_or_no
-from typing import Dict, Any
+from typing import Dict
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY
 from site_API.settings import payload_hotels_list, payload_summary, payload_get_offer
 import re
 import datetime
 from site_API.utils.site_api_handler import site_api
+from database.core import crud
+from database.common.models import History, db
 
 today = datetime.date.today()
 sort_command = "PRICE_HIGH_TO_LOW"
-filters_command = {"price": {"max": 15000, "min": 10}}
+command_name = "highprice"
+filters_command = {"price": {"max": 150000, "min": 10}}
+
+db_write = crud.create()
+db_read = crud.retrieve()
 
 def final_text(message: Message, data: Dict):
 
@@ -26,6 +33,21 @@ def final_text(message: Message, data: Dict):
                                                                         f"НЕТ - ввести параметры заново"))
 
 
+def write_db(data: Dict) -> None:
+
+    data_to_write = [{
+        "command": command_name,
+        "city": data["city"],
+        "hotels_num": data["hotels_num"],
+        "num_photo": (data["num_photo"] if data["need_photo"] else 0),
+        "check_in_date": data["checkin"],
+        "check_out_date": data["checkout"],
+        "full_result": data["hotels_list"],
+        "result_descr": [data["hotels_list"][hotel_id]["result_descr"] for hotel_id in data["hotels_list"].keys()]
+    }]
+    db_write(db, History, data_to_write)
+
+
 def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     calendar, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date,
                                               max_date=final_date, locale="ru").build()
@@ -36,11 +58,11 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     return start_date
 
 
-@bot.message_handler(commands=["highprice"])
+@bot.message_handler(commands=[command_name])
 def highprice(message: Message) -> None:
     bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
-    bot.send_message(message.from_user.id, f'Привет {message.from_user.first_name} \n'
-                                           f'Введите город для поиска отелей. ')
+    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
+                                           f"Введите город для поиска отелей. ")
 
 
 @bot.message_handler(state=SearchParamState.city)
@@ -53,8 +75,8 @@ def get_city(message: Message) -> None:
                                                f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
             bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
             with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-                data['city'] = message.text.lower()
-                data['regionId'] = location
+                data["city"] = message.text.lower()
+                data["regionId"] = location
 
         else:
             print("Google haven't found such place. Город не найден")
@@ -72,7 +94,7 @@ def hotels_num(message: Message) -> None:
                          reply_markup=y_or_no("Нужно ли показывать фотографии отелей? "))
         bot.set_state(message.from_user.id, SearchParamState.need_photo, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['hotels_num'] = int(message.text)
+            data["hotels_num"] = int(message.text)
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых отелей "
                                                f"введите число от 1 до {MAX_HOTEL_DISPLAYED}")
@@ -80,12 +102,12 @@ def hotels_num(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.need_photo)
 def get_need_photo(message: Message) -> None:
-    if message.text == 'ДА':
+    if message.text == "ДА":
         bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько фотографий показывать?"
                                                f"(не больше {MAX_PHOTO_DISPLAYED}, пожалуйста)")
         bot.set_state(message.from_user.id, SearchParamState.num_photo, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['need_photo'] = True
+            data["need_photo"] = True
 
     elif message.text == 'НЕТ':
         bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания."
@@ -111,16 +133,16 @@ def get_num_photo(message: Message) -> None:
                                                "Введите дату заезда")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             bot.set_state(message.from_user.id, SearchParamState.calendar_checkin, message.chat.id)
-            data['num_photo'] = int(message.text)
+            data["num_photo"] = int(message.text)
             start_date = today
             final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-            return start_calendar(message, 'checkin', start_date, final_date)               # Запуск календаря
+            return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id='checkin'))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id="checkin"))
 def calendar_callback_in(c, calendar_id: str = 'checkin', start_date=today):
     final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
 
@@ -138,16 +160,16 @@ def calendar_callback_in(c, calendar_id: str = 'checkin', start_date=today):
 
         with bot.retrieve_data(c.from_user.id) as data:
             data[calendar_id] = result
-            print(data)
+
             start_date = result
             final_date = datetime.timedelta(days=MAX_STAY) + start_date
             return start_calendar(c.message, 'checkout', start_date, final_date)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id='checkout'))
-def calendar_callback_out(c, calendar_id: str = 'checkout'):
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id="checkout"))
+def calendar_callback_out(c, calendar_id: str = "checkout"):
     with bot.retrieve_data(c.from_user.id) as data:
-        start_date = data['checkin']
+        start_date = data["checkin"]
         final_date = datetime.timedelta(days=MAX_STAY) + start_date
 
         result, key, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date, max_date=final_date,
@@ -167,7 +189,7 @@ def calendar_callback_out(c, calendar_id: str = 'checkout'):
                    f"Показать {data['hotels_num']} отеля" \
                    f"\nПоказывать {data['num_photo']} фото" \
                    f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
-                   f"Всё верно?\n" \
+                   f"\nВсё верно?\n" \
                    f"ДА - начать поиск\n" \
                    f"НЕТ - ввести параметры заново"
 
@@ -179,13 +201,15 @@ def calendar_callback_out(c, calendar_id: str = 'checkout'):
 @bot.message_handler(state=SearchParamState.complete)
 def params_ready(message: Message) -> None:
 
-    if message.text == 'ДА':
+    if message.text == "ДА":
         pass
 
-    elif message.text == 'НЕТ':
+    elif message.text == "НЕТ":
         bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
-        bot.send_message(message.from_user.id, f'Хммм... Хорошо, {message.from_user.first_name}, попробуем еще раз.\n'
-                                               f'Введите город для поиска отелей. ')
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            data.clear()                       #starting from the very beginning. Changing state and clearing data dict
+        bot.send_message(message.from_user.id, f"Хммм... Хорошо, {message.from_user.first_name}, попробуем еще раз.\n"
+                                               f"Введите город для поиска отелей. ")
     else:
         bot.send_message(message.from_user.id, "Пожалуйста, ответьте ДА или НЕТ")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
@@ -194,7 +218,6 @@ def params_ready(message: Message) -> None:
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
 
         payload_hotels_list["destination"]["regionId"] = data["regionId"]
-
         payload_hotels_list["checkInDate"]["day"] = data["checkin"].day
         payload_hotels_list["checkInDate"]["month"] = data["checkin"].month
         payload_hotels_list["checkInDate"]["year"] = data["checkin"].year
@@ -211,11 +234,6 @@ def params_ready(message: Message) -> None:
 
         data["hotels_list"] = site_api.get_hotels_list(payload_hotels_list)
 
-        #print(data)
-        # отдельно форматированный вывод информации медиа пак.
-        # Получает data и формирует запрос по отелям и фото. После этого формирует пак и выводит в ТГ
-        # Пока здесь пропишу, а там посмотрим какая декомпозиция лучше ляжет
-        """print(data["hotels_list"])"""
         payload_get_offer["checkInDate"] = data["checkInDate"]
         payload_get_offer["checkOutDate"] = data["checkOutDate"]
         payload_get_offer["destination"]["regionId"] = data["regionId"]
@@ -224,25 +242,36 @@ def params_ready(message: Message) -> None:
         for hotel_id in data["hotels_list"].keys():
             payload_summary["propertyId"] = hotel_id
             payload_get_offer["propertyId"] = hotel_id
-
+            print(payload_get_offer, "*"*20)
             hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
-            hotel_price_dict = site_api.get_hotel_price(payload_get_offer)
+            hotel_price = site_api.get_hotel_price(payload_get_offer)
 
             data["hotels_list"][hotel_id]["short_descr"] = hotel_summary_dict["short_descr"]
             data["hotels_list"][hotel_id]["addressline"] = hotel_summary_dict["addressline"]
-            data["hotels_list"][hotel_id]["accomodation_price"] = hotel_price_dict
+            data["hotels_list"][hotel_id]["accomodation_price"] = hotel_price
             if data["need_photo"]:
                 data["hotels_list"][hotel_id]["photo_urls"] = hotel_summary_dict["urlphoto"]
 
         print(data)
 
+        for hotel_id, hotel_info in data["hotels_list"].items():            #sending messages with hotels info
 
-""" После ввода команды у пользователя запрашивается:
-1. Город, где будет проводиться поиск.
-2. Количество отелей, которые необходимо вывести в результате (не больше
-заранее определённого максимума).
-3. Необходимость загрузки и вывода фотографий для каждого отеля (“Да/Нет”)
-a. При положительном ответе пользователь также вводит количество
-необходимых фотографий (не больше заранее определённого
-максимума)
-"""
+            text = f"{hotel_info['name']}\n{hotel_info['addressline']}\n{hotel_info['short_descr']}" \
+                   f"\nPrice: {hotel_info['accomodation_price']} "
+            data["hotels_list"][hotel_id]["result_descr"] = text
+
+            if hotel_info["photo_urls"]:
+                photo_urls_list: list = hotel_info["photo_urls"]
+
+                media_group = list()        #creating media pack for each hotel
+                num = 0
+                for photo_url in photo_urls_list:
+                    media_group.append(InputMediaPhoto(photo_url, caption=text if num == 0 else ''))
+                    num += 1
+                bot.send_media_group(message.from_user.id, media=media_group)
+
+            else:
+                bot.send_message(message.from_user.id, text)
+
+
+        write_db(data)
