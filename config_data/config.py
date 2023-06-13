@@ -106,7 +106,7 @@ command_set = {
     },
     "custom": {
         "sort_command": "PRICE_LOW_TO_HIGH",
-        "filters_command": {"price": {"max": 500, "min": 5}},
+        "filters_command": {"price": {"max": 150000, "min": 5}},
         "russ_word": "отели по критерию"
     }
 }

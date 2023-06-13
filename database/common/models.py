@@ -14,9 +14,10 @@ class ModelBase(pw.Model):
 
 class History(ModelBase):
     command = pw.TextField()
-    sorting_by = pw.TextField
+    pl_sort = pw.TextField()
+
     city = pw.TextField()
-    hotels_num = pw.TextField()
+    hotels_num = pw.IntegerField()
     num_photo = pw.TextField()
     check_in_date = pw.DateField()
     check_out_date = pw.DateField()
@@ -26,5 +27,5 @@ class History(ModelBase):
 
 
 
-
+#sorting_pl = pw.TextField
     #username = pw.TextField()

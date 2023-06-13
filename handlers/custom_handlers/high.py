@@ -42,10 +42,10 @@ def write_db(data: Dict) -> None:
 
     data_to_write = [{
         "command": data["command_name"],
-        "sorting_by": data["sorting_by"],
+        "pl_sort": data["sorting_pl"],
         "city": data["city"],
         "hotels_num": data["hotels_num"],
-        "num_photo": (data["num_photo"] if data["need_photo"] else 0),
+        "num_photo": data["num_photo"] if data["need_photo"] else "No Photo",
         "check_in_date": data["checkin"],
         "check_out_date": data["checkout"],
         "full_result": data["hotels_list"],
@@ -71,7 +71,7 @@ def highprice(message: Message) -> None:
                                             f"Введите город для поиска отелей. ")
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data["command_name"] = "highprice"
-        data["sorting_by"] = sort_params["sort_high"]
+        data["sorting_pl"] = sort_params["sort_high"]
 
 
 @bot.message_handler(commands=["lowprice"])
@@ -81,13 +81,11 @@ def lowprice(message: Message) -> None:
                                            f"Введите город для поиска отелей. ")
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data["command_name"] = "lowprice"
-        data["sorting_by"] = sort_params["sort_low"]
+        data["sorting_pl"] = sort_params["sort_low"]
 
 
 @bot.message_handler(commands=["custom"])
 def custom(message: Message) -> None:
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["command_name"] = "custom"
     bot.set_state(message.from_user.id, SearchParamState.cust_param, message.chat.id)
     bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
                                             f"Вы выбрали команду поиска отелей по критерию\n"
@@ -97,16 +95,16 @@ def custom(message: Message) -> None:
                                            f"3. С самым высоким рейтингом гостей \n"
                                            f"4. По количеству звезд \n"
                                            f"5. Самые рекомендуемые ", reply_markup=custom_reply_markup)
-
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["command_name"] = "custom"
 
 
 @bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("sort_"))
 def custom_sort_btn_handler(c):
     bot.set_state(c.message.chat.id, SearchParamState.city, c.message.chat.id)
     with bot.retrieve_data(c.from_user.id) as data:
-        data["sort_type"] = sort_params[c.data]
-    bot.send_message(c.message.chat.id, f"Привет {c.from_user.first_name} \n"
-                                           f"Введите город для поиска отелей. ")
+        data["sorting_pl"] = sort_params[c.data]
+    bot.send_message(c.message.chat.id, f"Введите город для поиска отелей. ")
 
 
 @bot.message_handler(state=SearchParamState.city)
@@ -266,7 +264,7 @@ def params_ready(message: Message) -> None:
         payload_hotels_list["checkOutDate"]["year"] = data["checkout"].year
 
         payload_hotels_list["resultsSize"] = data["hotels_num"]
-        payload_hotels_list["sort"] = command_set[data['command_name']]['sort_command']
+        payload_hotels_list["sort"] = data["sorting_pl"]
         payload_hotels_list["filters"] = command_set[data['command_name']]['filters_command']
 
         data["checkInDate"] = payload_hotels_list["checkInDate"]
