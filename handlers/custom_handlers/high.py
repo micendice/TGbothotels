@@ -4,9 +4,12 @@ from states.search_params import SearchParamState
 from telebot.types import Message, InputMediaPhoto
 
 from keyboards.reply.y_or_no import y_or_no
+from keyboards.inline.custom_keyb import custom_reply_markup
+
 from typing import Dict
-from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY
-from site_API.settings import payload_hotels_list, payload_summary, payload_get_offer
+from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY, \
+    payload_hotels_list, payload_summary, payload_get_offer, command_set, sort_params
+
 import re
 import datetime
 from site_API.utils.site_api_handler import site_api
@@ -14,29 +17,32 @@ from database.core import crud
 from database.common.models import History, db
 
 today = datetime.date.today()
-sort_command = "PRICE_HIGH_TO_LOW"
+"""sort_command = "PRICE_HIGH_TO_LOW"
 command_name = "highprice"
-filters_command = {"price": {"max": 150000, "min": 10}}
+filters_command = {"price": {"max": 150000, "min": 10}}"""
 
 db_write = crud.create()
 db_read = crud.retrieve()
 
-def final_text(message: Message, data: Dict):
 
-    text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
-            f"Показать {data['hotels_num']} отеля" \
-            f"\nПоказывать {data['num_photo']} фото" \
-           f"\nДаты проживания: c {data['checkin']} по {data['checkout']}"
+def final_text(data: Dict):
+    text = f"Ищем {command_set[data['command_name']]['russ_word']} по следующим параметрам\n" \
+           f"Город: {data['city']} \n" \
+           f"Показать {data['hotels_num']} отеля" \
+           f"\nПоказывать {data['num_photo']} фото" \
+           f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
+           f"\nВсё верно?\n" \
+           f"ДА - начать поиск\n" \
+           f"НЕТ - ввести параметры заново"
 
-    bot.send_message(message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
-                                                                        f"ДА - начать поиск\n "
-                                                                        f"НЕТ - ввести параметры заново"))
+    return text
 
 
 def write_db(data: Dict) -> None:
 
     data_to_write = [{
-        "command": command_name,
+        "command": data["command_name"],
+        "sorting_by": data["sorting_by"],
         "city": data["city"],
         "hotels_num": data["hotels_num"],
         "num_photo": (data["num_photo"] if data["need_photo"] else 0),
@@ -58,10 +64,48 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     return start_date
 
 
-@bot.message_handler(commands=[command_name])
+@bot.message_handler(commands=["highprice"])
 def highprice(message: Message) -> None:
     bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
     bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
+                                            f"Введите город для поиска отелей. ")
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["command_name"] = "highprice"
+        data["sorting_by"] = sort_params["sort_high"]
+
+
+@bot.message_handler(commands=["lowprice"])
+def lowprice(message: Message) -> None:
+    bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
+    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
+                                           f"Введите город для поиска отелей. ")
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["command_name"] = "lowprice"
+        data["sorting_by"] = sort_params["sort_low"]
+
+
+@bot.message_handler(commands=["custom"])
+def custom(message: Message) -> None:
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["command_name"] = "custom"
+    bot.set_state(message.from_user.id, SearchParamState.cust_param, message.chat.id)
+    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
+                                            f"Вы выбрали команду поиска отелей по критерию\n"
+                                           f"Доступны следующие критерии: "
+                                           f"\n1. Лучшие по цене и отобранные hotels.com \n"
+                                           f"2. Ближайшие к центру города \n"
+                                           f"3. С самым высоким рейтингом гостей \n"
+                                           f"4. По количеству звезд \n"
+                                           f"5. Самые рекомендуемые ", reply_markup=custom_reply_markup)
+
+
+
+@bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("sort_"))
+def custom_sort_btn_handler(c):
+    bot.set_state(c.message.chat.id, SearchParamState.city, c.message.chat.id)
+    with bot.retrieve_data(c.from_user.id) as data:
+        data["sort_type"] = sort_params[c.data]
+    bot.send_message(c.message.chat.id, f"Привет {c.from_user.first_name} \n"
                                            f"Введите город для поиска отелей. ")
 
 
@@ -185,14 +229,7 @@ def calendar_callback_out(c, calendar_id: str = "checkout"):
                                   c.message.message_id)
             data[calendar_id] = result
             bot.set_state(c.message.chat.id, SearchParamState.complete, c.message.chat.id)
-            text = f"Ищем самые дорогие гостиницы по следующим параметрам\nГород: {data['city']} \n" \
-                   f"Показать {data['hotels_num']} отеля" \
-                   f"\nПоказывать {data['num_photo']} фото" \
-                   f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
-                   f"\nВсё верно?\n" \
-                   f"ДА - начать поиск\n" \
-                   f"НЕТ - ввести параметры заново"
-
+            text = final_text(data)
             bot.send_message(c.message.chat.id, text, reply_markup=y_or_no(f"Всё верно?\n "
                                                                               f"ДА - начать поиск\n "
                                                                               f"НЕТ - ввести параметры заново"))
@@ -213,7 +250,10 @@ def params_ready(message: Message) -> None:
     else:
         bot.send_message(message.from_user.id, "Пожалуйста, ответьте ДА или НЕТ")
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            final_text(message, data)
+            text = final_text(data)
+            bot.send_message(message.from_user.id, text, reply_markup=y_or_no(f"Всё верно?\n "
+                                                                              f"ДА - начать поиск\n "
+                                                                              f"НЕТ - ввести параметры заново"))
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
 
@@ -226,8 +266,8 @@ def params_ready(message: Message) -> None:
         payload_hotels_list["checkOutDate"]["year"] = data["checkout"].year
 
         payload_hotels_list["resultsSize"] = data["hotels_num"]
-        payload_hotels_list["sort"] = sort_command
-        payload_hotels_list["filters"] = filters_command
+        payload_hotels_list["sort"] = command_set[data['command_name']]['sort_command']
+        payload_hotels_list["filters"] = command_set[data['command_name']]['filters_command']
 
         data["checkInDate"] = payload_hotels_list["checkInDate"]
         data["checkOutDate"] = payload_hotels_list["checkOutDate"]
@@ -260,7 +300,7 @@ def params_ready(message: Message) -> None:
                    f"\nPrice: {hotel_info['accomodation_price']} "
             data["hotels_list"][hotel_id]["result_descr"] = text
 
-            if hotel_info["photo_urls"]:
+            if "photo_urls" in hotel_info.keys():
                 photo_urls_list: list = hotel_info["photo_urls"]
 
                 media_group = list()        #creating media pack for each hotel
@@ -273,5 +313,6 @@ def params_ready(message: Message) -> None:
             else:
                 bot.send_message(message.from_user.id, text)
 
-
         write_db(data)
+        data.clear()
+    bot.set_state(message.from_user.id, SearchParamState.menu, message.chat.id)

@@ -9,6 +9,8 @@ class SearchParamState(StatesGroup):
     calendar_checkin = State()
     calendar_checkout = State()
     complete = State()
+    menu = State()
+    cust_param = State()
 
 
 

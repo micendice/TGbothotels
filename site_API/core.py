@@ -1,6 +1,6 @@
 
 from site_API.utils.site_api_handler import SiteApiInterface
-from .settings import SiteSettings
+from ..config_data.config import SiteSettings
 
 site = SiteSettings()
 

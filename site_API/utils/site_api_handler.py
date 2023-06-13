@@ -1,7 +1,7 @@
 import requests
 from typing import Dict
 import urllib.parse
-from ..settings import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
+from config_data.config import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
 import json
 site = SiteSettings()
 
