@@ -4,6 +4,7 @@ from states.search_params import SearchParamState
 from telebot.types import Message, InputMediaPhoto
 
 from keyboards.reply.y_or_no import y_or_no
+from keyboards.inline.custom_keyb import custom_reply_markup
 
 from typing import Dict
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY, \
@@ -31,7 +32,7 @@ formatter_1 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s"
 handler_1.setFormatter(formatter_1)
 logger_1.addHandler(handler_1)
 
-logger_1.info(f"Testing logging from the very beginning")
+logger_1.info(f"Core working now")
 
 
 def final_text(data: Dict):
@@ -88,6 +89,17 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
                      f"Select {LSTEP[step]}",
                      reply_markup=calendar)
     return start_date
+
+"""
+@bot.message_handler(commands=["highprice"])
+def highprice(message: Message) -> None:
+    bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
+    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
+                                            f"Введите город для поиска отелей. ")
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["command_name"] = "highprice"
+        data["sorting_pl"] = sort_params["sort_high"]"""
+
 
 @bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("sort_"))
 def custom_sort_btn_handler(c):
@@ -270,7 +282,9 @@ def params_ready(message: Message) -> None:
         for hotel_id in data["hotels_list"].keys():
             payload_summary["propertyId"] = hotel_id
             payload_get_offer["propertyId"] = hotel_id
-            print(payload_get_offer, "*"*20)
+
+            #print(payload_get_offer, "*"*20)
+
             hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
             hotel_price = site_api.get_hotel_price(payload_get_offer)
 
@@ -280,7 +294,7 @@ def params_ready(message: Message) -> None:
             if data["need_photo"]:
                 data["hotels_list"][hotel_id]["photo_urls"] = hotel_summary_dict["urlphoto"]
 
-        logger_1.info(f"Successfully proceed to creating data packs according to hotels list")
+        logger_1.info(f"data")
 
         for hotel_id, hotel_info in data["hotels_list"].items():            #sending messages with hotels info
 

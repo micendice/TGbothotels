@@ -6,7 +6,7 @@ from states.contact_info import UserInfoState
 from telebot.types import Message
 from database.core import crud
 from database.common.models import History, db
-from .high import read_db
+from . core import read_db
 db_write = crud.create()
 db_read = crud.retrieve()
 
@@ -29,6 +29,6 @@ def history(message: Message) -> None:
                      f"О, {message.from_user.first_name}! \n"
                      f"Спешу исполнить твою команду\n"
                      f"Узри же историю последних десяти запросов!" )
-    text_bd = read_db()
-    logger_3.debug(f"Trying to write down data into db: {text_bd}")
+    """text_bd = read_db()"""
+    logger_3.debug(f"Trying to write down data into db:")
     #print(text_bd)

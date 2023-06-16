@@ -22,7 +22,7 @@ formatter_2 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s"
 handler_2.setFormatter(formatter_2)
 logger_2.addHandler(handler_2)
 
-logger_2.info(f"SiteAPI handler logging")
+logger_2.info(f"Testing logging from the very beginning")
 
 
 def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: int):
@@ -37,7 +37,7 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
             timeout=timeout
         )
     elif method == "post":
-        logger_2.info(f"Creating request \n:method: {method}\nurl: {url}\n"
+        logger_2.info(f"Creating request :method: {method}\nurl: {url}\n"
                       f"headers: {headers}\n params-(payload) : {params}\ntimeout: {timeout}")
         response = requests.request(
             method,
@@ -58,23 +58,22 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
 
 def _find_location(location: str, base: str = base_url, headers: Dict = st_headers,
                    timeout: int = 1000, func=_make_response):
-    url = urllib.parse.urljoin(base, url_loc_search , True)
+    url = urllib.parse.urljoin(base, url_loc_search, True)
 
     querystring = {"q": location, "locale": "en_US", "langid": "1033", "siteid": "300000001"}
 
     response = func("get", url, headers, querystring, timeout)
     response_dict = json.loads(response)
 
-    logger_2.info(f"Finding the city: {response_dict['rc'], response_dict['rid']}")
-
     if response_dict['rc'] == 'OK':
+        logger_2.info(f"result of location search: {response_dict['rc']}")
         gaiaId = response_dict["sr"][0]["gaiaId"]
+        #coordinates = response_dict["sr"][0]["coordinates"]
         result = gaiaId
-        """coordinates = response_dict["sr"][0]["coordinates"]
-        res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId}"""
+        #res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
     else:
         result = None
-
+    logger_2.info(f"result of location search: {result}")
     return result
 
 
@@ -90,8 +89,6 @@ def _hotels_list(payload: Dict, base: str = base_url, headers: Dict = st_headers
 
     for item in properties_list:
         hotels_id_info[item["id"]] = {"name": item["name"]}
-
-    logger_2.info(f"Hotels found (hotels_list established):  {hotels_id_info}")
     return hotels_id_info
 
 
@@ -111,7 +108,6 @@ def _hotel_summary(payload: Dict, num_photo: int, base: str = base_url,
             photo_urls.append(url_photo)
 
     hotel_summary_dict = {"short_descr": short_descr, "addressline": addressline, "urlphoto": photo_urls}
-    logger_2.info(f"Gathering info for hotel in hotels list")
     return hotel_summary_dict
 
 
@@ -124,12 +120,12 @@ def _hotel_price(payload: Dict, base: str = base_url,
     error_message = response_dict["data"]["propertyOffers"]["errorMessage"]
     if error_message:
         result = response_dict["data"]["propertyOffers"]["errorMessage"]["title"]["text"]
-
+        print(error_message)
     else:
         accomodation_price = \
             response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]
         result = accomodation_price
-    logger_2.info(f"Finding price for hotel")
+
     return result
 
 
