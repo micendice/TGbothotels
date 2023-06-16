@@ -78,7 +78,8 @@ def read_db():
     )
     result_db_read = db_read(db, History, col_to_read)
     print(result_db_read)
-    return result_db_read
+    db_recs = result_db_read.dicts().execute()
+    return db_recs
 
 
 def start_calendar(message: Message, calendar_id: str, start_date, final_date):
@@ -89,16 +90,6 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
                      f"Select {LSTEP[step]}",
                      reply_markup=calendar)
     return start_date
-
-"""
-@bot.message_handler(commands=["highprice"])
-def highprice(message: Message) -> None:
-    bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
-    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
-                                            f"Введите город для поиска отелей. ")
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["command_name"] = "highprice"
-        data["sorting_pl"] = sort_params["sort_high"]"""
 
 
 @bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("sort_"))

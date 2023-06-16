@@ -29,6 +29,7 @@ def history(message: Message) -> None:
                      f"О, {message.from_user.first_name}! \n"
                      f"Спешу исполнить твою команду\n"
                      f"Узри же историю последних десяти запросов!" )
-    """text_bd = read_db()"""
+    text_bd = read_db()
+
     logger_3.debug(f"Trying to write down data into db:")
-    #print(text_bd)
+    print(text_bd)

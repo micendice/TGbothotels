@@ -9,7 +9,7 @@ from states.search_params import SearchParamState
 def custom(message: Message) -> None:
     bot.set_state(message.from_user.id, SearchParamState.cust_param, message.chat.id)
     bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
-                                            f"Вы выбрали команду поиска отелей по критерию\n"
+                                           f"Вы выбрали команду поиска отелей по критерию\n"
                                            f"Доступны следующие критерии: \n"
                                            f"1. Лучшие по цене и отобранные hotels.com \n"
                                            f"2. С самым высоким рейтингом гостей \n"
