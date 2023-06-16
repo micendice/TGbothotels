@@ -63,24 +63,14 @@ def write_db(data: Dict) -> None:
     }]
     db_write(db, History, data_to_write)
 
-
+"""
 def read_db():
-    col_to_read = (
-        "created_at",
-        "command",
-        "pl_sort",
-        "city",
-        "hotels_num",
-        "num_photo",
-        "check_in_date",
-        "check_out_date",
-        "result_descr"
-    )
-    result_db_read = db_read(db, History, col_to_read)
-    print(result_db_read)
+    
+    result_db_read = db_read(db, History).limit(10).order_by(History.id.desc())
+    #print(result_db_read)
     db_recs = result_db_read.dicts().execute()
     return db_recs
-
+"""
 
 def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     calendar, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date,
