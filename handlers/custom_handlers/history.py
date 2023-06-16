@@ -1,25 +1,34 @@
-"""from aiogram import types
-from loader import dp
 
+import logging
 
-@dp.message_handler(commands=['history'])
-async def history_command(message: types.Message):
-    await message.reply("Здесь будет функция предоставления информации об истории запросов.\n "
-                        "Строка 2")"""
 from loader import bot
 from states.contact_info import UserInfoState
 from telebot.types import Message
+from database.core import crud
+from database.common.models import History, db
+from .high import read_db
+db_write = crud.create()
+db_read = crud.retrieve()
+
+
+logger_3 = logging.getLogger(__name__)
+logger_3.setLevel(logging.DEBUG)
+
+handler_3 = logging.FileHandler(f"{__name__}.log", mode="w")
+formatter_3 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
+
+handler_3.setFormatter(formatter_3)
+logger_3.addHandler(handler_3)
+
+logger_3.debug(f"Testing logging in debugging process")
 
 
 @bot.message_handler(commands=["history"])
-def history(message: Message):
-    #bot.set_state(message.from_user.id, UserInfoState.name, message.chat.id)
-    bot.send_message(message.from_user.id, f'Привет {message.from_user.username} \n'
-                                           f'После ввода команды пользователю выводится история поиска отелей\n'
-                                           f'Line 2')
-
-"""После ввода команды пользователю выводится история поиска отелей. Сама история
-содержит:
-1. Команду, которую вводил пользователь.
-2. Дату и время ввода команды.
-3. Отели, которые были найдены."""
+def history(message: Message) -> None:
+    bot.send_message(message.from_user.id,
+                     f"О, {message.from_user.first_name}! \n"
+                     f"Спешу исполнить твою команду\n"
+                     f"Узри же историю последних десяти запросов!" )
+    text_bd = read_db()
+    logger_3.debug(f"Trying to write down data into db: {text_bd}")
+    #print(text_bd)

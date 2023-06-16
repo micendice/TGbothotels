@@ -3,6 +3,7 @@ from typing import Dict
 import urllib.parse
 from config_data.config import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
 import json
+import logging
 site = SiteSettings()
 
 st_headers = {
@@ -12,9 +13,22 @@ st_headers = {
 
 base_url = "https://" + site.host_api
 
+logger_2 = logging.getLogger(__name__)
+logger_2.setLevel(logging.INFO)
+
+handler_2 = logging.FileHandler(f"{__name__}.log", mode="w")
+formatter_2 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
+
+handler_2.setFormatter(formatter_2)
+logger_2.addHandler(handler_2)
+
+logger_2.info(f"SiteAPI handler logging")
+
+
 def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: int):
     if method == 'get':
-        """print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params- (querystring): {params}\ntimeout: {timeout}')"""
+        logger_2.info(f"Creating request : method: {method}\nurl: {url}\n"
+                      f"headers: {headers}\n params- (querystring): {params}\ntimeout: {timeout}")
         response = requests.request(
             method,
             url,
@@ -23,7 +37,8 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
             timeout=timeout
         )
     elif method == "post":
-        print(f'method: {method}\nurl: {url}\nheaders: {headers}\n params-(payload) : {params}\ntimeout: {timeout}')
+        logger_2.info(f"Creating request \n:method: {method}\nurl: {url}\n"
+                      f"headers: {headers}\n params-(payload) : {params}\ntimeout: {timeout}")
         response = requests.request(
             method,
             url,
@@ -33,14 +48,12 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
         )
 
     status_code = response.status_code
-    print(status_code)
-    """print(response.text)"""
+    logger_2.info(f"Requesting successful. Response is {status_code}")
 
     if status_code == 200:
         return response.text
     else:
-        print(response)
-    #return status_code
+        logger_2.info(f"Fail! Response is {status_code}")
 
 
 def _find_location(location: str, base: str = base_url, headers: Dict = st_headers,
@@ -48,17 +61,17 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
     url = urllib.parse.urljoin(base, url_loc_search , True)
 
     querystring = {"q": location, "locale": "en_US", "langid": "1033", "siteid": "300000001"}
-    """print(f'url: {str(url)}\nquerystring: {querystring}\n')"""
+
     response = func("get", url, headers, querystring, timeout)
     response_dict = json.loads(response)
-    """print(response)"""
-    print(response_dict['rc'], response_dict['rid'])
+
+    logger_2.info(f"Finding the city: {response_dict['rc'], response_dict['rid']}")
 
     if response_dict['rc'] == 'OK':
         gaiaId = response_dict["sr"][0]["gaiaId"]
-        coordinates = response_dict["sr"][0]["coordinates"]
         result = gaiaId
-        res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
+        """coordinates = response_dict["sr"][0]["coordinates"]
+        res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId}"""
     else:
         result = None
 
@@ -77,6 +90,8 @@ def _hotels_list(payload: Dict, base: str = base_url, headers: Dict = st_headers
 
     for item in properties_list:
         hotels_id_info[item["id"]] = {"name": item["name"]}
+
+    logger_2.info(f"Hotels found (hotels_list established):  {hotels_id_info}")
     return hotels_id_info
 
 
@@ -96,6 +111,7 @@ def _hotel_summary(payload: Dict, num_photo: int, base: str = base_url,
             photo_urls.append(url_photo)
 
     hotel_summary_dict = {"short_descr": short_descr, "addressline": addressline, "urlphoto": photo_urls}
+    logger_2.info(f"Gathering info for hotel in hotels list")
     return hotel_summary_dict
 
 
@@ -108,19 +124,12 @@ def _hotel_price(payload: Dict, base: str = base_url,
     error_message = response_dict["data"]["propertyOffers"]["errorMessage"]
     if error_message:
         result = response_dict["data"]["propertyOffers"]["errorMessage"]["title"]["text"]
-        print(error_message)
+
     else:
-        """accomodation_price = dict()
-        accomodation_price["total_price"] =\
-            response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["price"]["total"][
-            "amount"]
-        accomodation_price["totalPriceMessage"] =\
-            response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]"""
         accomodation_price = \
             response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]
-        #print(accomodation_price)
         result = accomodation_price
-
+    logger_2.info(f"Finding price for hotel")
     return result
 
 

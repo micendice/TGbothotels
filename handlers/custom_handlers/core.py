@@ -22,18 +22,18 @@ today = datetime.date.today()
 db_write = crud.create()
 db_read = crud.retrieve()
 
-logger_4 = logging.getLogger(__name__)
-logger_4.setLevel(logging.INFO)
+logger_1 = logging.getLogger(__name__)
+logger_1.setLevel(logging.INFO)
 
-handler_4 = logging.FileHandler(f"{__name__}.log", mode="w")
-formatter_4 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
+handler_1 = logging.FileHandler(f"{__name__}.log", mode="w")
+formatter_1 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
-handler_4.setFormatter(formatter_4)
-logger_4.addHandler(handler_4)
+handler_1.setFormatter(formatter_1)
+logger_1.addHandler(handler_1)
 
-logger_4.info(f"Testing logging from high command refactor code")
+logger_1.info(f"Testing logging from the very beginning")
 
-"""
+
 def final_text(data: Dict):
     text = f"Ищем {command_set[data['command_name']]['russ_word']} по следующим параметрам\n" \
            f"Город: {data['city']} \n" \
@@ -88,54 +88,6 @@ def start_calendar(message: Message, calendar_id: str, start_date, final_date):
                      f"Select {LSTEP[step]}",
                      reply_markup=calendar)
     return start_date
-
-"""
-
-
-@bot.message_handler(commands=["highprice"])
-def highprice(message: Message) -> None:
-    bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
-    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
-                                            f"Введите город для поиска отелей. ")
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["command_name"] = "highprice"
-        data["sorting_pl"] = sort_params["sort_high"]
-
-"""
-@bot.message_handler(commands=["lowprice"])
-def lowprice(message: Message) -> None:
-    bot.set_state(message.from_user.id, SearchParamState.city, message.chat.id)
-    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
-                                           f"Введите город для поиска отелей. ")
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["command_name"] = "lowprice"
-        data["sorting_pl"] = sort_params["sort_low"]
-
-
-@bot.message_handler(commands=["custom"])
-def custom(message: Message) -> None:
-    bot.set_state(message.from_user.id, SearchParamState.cust_param, message.chat.id)
-    bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
-                                            f"Вы выбрали команду поиска отелей по критерию\n"
-                                           f"Доступны следующие критерии: "
-                                           f"\n1. Лучшие по цене и отобранные hotels.com \n"
-                                           f"2. Ближайшие к центру города \n"
-                                           f"3. С самым высоким рейтингом гостей \n"
-                                           f"4. По количеству звезд \n"
-                                           f"5. Самые рекомендуемые ", reply_markup=custom_reply_markup)
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["command_name"] = "custom"
-
-
-@bot.message_handler(commands=["history"])
-def history(message: Message) -> None:
-    bot.send_message(message.from_user.id,
-                     f"О, {message.from_user.first_name}! \n"
-                     f"Спешу исполнить твою команду\n"
-                     f"Узри же историю последних десяти запросов!" )
-    text_bd = read_db()
-    #print(text_bd)
-
 
 @bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("sort_"))
 def custom_sort_btn_handler(c):
@@ -351,4 +303,4 @@ def params_ready(message: Message) -> None:
 
         write_db(data)
         data.clear()
-    bot.set_state(message.from_user.id, SearchParamState.menu, message.chat.id)"""
+    bot.set_state(message.from_user.id, SearchParamState.menu, message.chat.id)
