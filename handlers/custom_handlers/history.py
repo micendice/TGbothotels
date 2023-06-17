@@ -6,7 +6,7 @@ from states.contact_info import UserInfoState
 from telebot.types import Message
 from database.core import crud
 from database.common.models import History, db
-#from . core import read_db
+from . core import write_db
 db_write = crud.create()
 db_read = crud.retrieve()
 
@@ -24,13 +24,8 @@ logger_3.debug(f"Testing logging in debugging process")
 
 
 def read_db():
-
     result_db_read = db_read(db, History).limit(10).order_by(History.id.desc())
-
     db_recs = result_db_read.dicts().execute()
-    for record in db_recs:
-        print('Record ', record)
-
     return db_recs
 
 
@@ -40,13 +35,29 @@ def history(message: Message) -> None:
                      f"О, {message.from_user.first_name}! \n"
                      f"Спешу исполнить твою команду\n"
                      f"Узри же историю последних десяти запросов!" )
-    text_bd = read_db()
 
-    logger_3.debug(f"Trying to write down data into db:")
+    text_to_report = str()
+    for i_dict in read_db():
+        #logger_3.debug(f"Record , {record}")
+        line = f"Номер записи: {i_dict['id']},создана: {i_dict['created_at']}, " \
+               f"команда: {i_dict['command']}, город: {i_dict['city']} \n"
+        text_to_report += line
 
-
+    data_to_fill = {
+        "command_name": "history",
+        "sorting_pl": "n/a",
+        "city": "n/a",
+        "hotels_num": "n/a",
+        "need_photo": "n/a",
+        "num_photo": "n/a",
+        "checkin": "n/a",
+        "checkout": "n/a",
+        "hotels_list": {"1": {"result_descr": "n/a"}},
+    }
+    write_db(data_to_fill)
 
     bot.send_message(message.from_user.id,
                      f"О, {message.from_user.first_name}! \n"
                      f"Спешу исполнить твою команду\n"
-                     f"Узри же историю последних десяти запросов!")
+                     f"Узри же историю последних десяти запросов!\n {text_to_report}")
+
