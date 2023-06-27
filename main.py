@@ -1,5 +1,5 @@
 from loader import bot
-import handlers
+import handlers                 #crucial thing! can't touch this!
 from telebot.custom_filters import StateFilter
 from utils.set_bot_commands import set_default_commands, set_custom_commands
 

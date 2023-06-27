@@ -1,8 +1,9 @@
-from datetime import datetime
-
 import peewee as pw
 
-db = pw.SqliteDatabase('querylog13.db')
+from datetime import datetime
+
+
+db = pw.SqliteDatabase('querylog14.db')
 
 
 class ModelBase(pw.Model):
@@ -13,6 +14,7 @@ class ModelBase(pw.Model):
 
 
 class History(ModelBase):
+    user_id = pw.TextField()
     command = pw.TextField()
     pl_sort = pw.TextField()
 
@@ -25,7 +27,3 @@ class History(ModelBase):
     full_result = pw.TextField()
     result_descr = pw.TextField()
 
-
-
-#sorting_pl = pw.TextField
-    #username = pw.TextField()

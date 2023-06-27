@@ -1,7 +1,8 @@
-from typing import Dict, List, TypeVar
+
 from database.common.models import ModelBase
 from ..common.models import db
 from peewee import ModelSelect
+from typing import Dict, List, TypeVar
 T = TypeVar("T")
 
 

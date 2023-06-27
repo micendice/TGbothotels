@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv, find_dotenv
 from pydantic import BaseSettings, SecretStr, StrictStr
 
@@ -36,7 +37,7 @@ class SiteSettings(BaseSettings):
     host_api: StrictStr = os.getenv("HOST_API", None)
 
 
-rooms_payload = [{"adults": 2, "children": [{"age": 13}, {"age": 5}]}]
+rooms_payload = [{"adults": 2, "children": [{"age": 13}]}]
 payload_hotels_list = {
     "currency": "USD",
     "eapid": 1,

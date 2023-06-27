@@ -1,5 +1,4 @@
 from loader import bot
-from states.contact_info import UserInfoState
 from telebot.types import Message
 from keyboards.inline.custom_keyb import custom_reply_markup
 from states.search_params import SearchParamState
@@ -17,4 +16,5 @@ def custom(message: Message) -> None:
                                            f"4. По количеству звезд \n"
                                            f"5. Самые рекомендуемые ", reply_markup=custom_reply_markup)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["user_id"] = str(message.from_user.id)
         data["command_name"] = "custom"

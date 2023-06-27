@@ -1,22 +1,26 @@
+
+import re
+import datetime
+import logging
+
+from typing import Dict
+
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+
 from loader import bot
 from states.search_params import SearchParamState
 from telebot.types import Message, InputMediaPhoto
 
 from keyboards.reply.y_or_no import y_or_no
-from keyboards.inline.custom_keyb import custom_reply_markup
+#from keyboards.inline.custom_keyb import custom_reply_markup
 
-from typing import Dict
-from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY, \
-    payload_hotels_list, payload_summary, payload_get_offer, command_set, sort_params
-
-import re
-import datetime
 from site_API.utils.site_api_handler import site_api
 from database.core import crud
 from database.common.models import History, db
 
-import logging
+from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY, \
+    payload_hotels_list, payload_summary, payload_get_offer, command_set, sort_params, CUSTOM_COMMANDS
+
 
 today = datetime.date.today()
 
@@ -26,7 +30,7 @@ db_read = crud.retrieve()
 logger_1 = logging.getLogger(__name__)
 logger_1.setLevel(logging.INFO)
 
-handler_1 = logging.FileHandler(f"{__name__}.log", mode="w")
+handler_1 = logging.FileHandler(f"{__name__}.log", mode="w", encoding="utf-8")
 formatter_1 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
 handler_1.setFormatter(formatter_1)
@@ -51,6 +55,7 @@ def final_text(data: Dict):
 def write_db(data: Dict) -> None:
 
     data_to_write = [{
+        "user_id": data["user_id"],
         "command": data["command_name"],
         "pl_sort": data["sorting_pl"],
         "city": data["city"],
@@ -63,14 +68,6 @@ def write_db(data: Dict) -> None:
     }]
     db_write(db, History, data_to_write)
 
-"""
-def read_db():
-    
-    result_db_read = db_read(db, History).limit(10).order_by(History.id.desc())
-    #print(result_db_read)
-    db_recs = result_db_read.dicts().execute()
-    return db_recs
-"""
 
 def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     calendar, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date,
@@ -104,7 +101,9 @@ def get_city(message: Message) -> None:
                 data["regionId"] = location
 
         else:
-            print("Google haven't found such place. Город не найден")
+            bot.send_message(message.from_user.id, f"Google haven't found such place. Город не найден.\n"
+                                                   f"Давайте попробуем какой-нибудь другой город.")
+            logger_1.info(f"{message.text.lower()} - Google haven't found such place.")
 
     else:
         bot.send_message(message.from_user.id, "Название города может содержать только "

@@ -1,22 +1,26 @@
 import requests
-from typing import Dict
-import urllib.parse
-from config_data.config import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
 import json
 import logging
+import urllib.parse
+
+from typing import Dict
+
+from config_data.config import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
+
 site = SiteSettings()
 
 st_headers = {
 	"X-RapidAPI-Key": site.api_key.get_secret_value(),
-	"X-RapidAPI-Host": site.host_api
+	"X-RapidAPI-Host": site.host_api[8:]                    #Cutting off https prefix
     }
 
-base_url = "https://" + site.host_api
+
+base_url = site.host_api
 
 logger_2 = logging.getLogger(__name__)
 logger_2.setLevel(logging.INFO)
 
-handler_2 = logging.FileHandler(f"{__name__}.log", mode="w")
+handler_2 = logging.FileHandler(f"{__name__}.log", mode="w", encoding="utf-8")
 formatter_2 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
 handler_2.setFormatter(formatter_2)
@@ -66,14 +70,15 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
     response_dict = json.loads(response)
 
     if response_dict['rc'] == 'OK':
-        logger_2.info(f"result of location search: {response_dict['rc']}")
+
         gaiaId = response_dict["sr"][0]["gaiaId"]
+        logger_2.info(f"result of location search: {response_dict['rc']}, regionID = {gaiaId}")
         #coordinates = response_dict["sr"][0]["coordinates"]
         result = gaiaId
         #res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
     else:
         result = None
-    logger_2.info(f"result of location search: {result}")
+    logger_2.info(f"result of location search is None: {result}")
     return result
 
 

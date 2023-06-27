@@ -11,5 +11,7 @@ def lowprice(message: Message) -> None:
     bot.send_message(message.from_user.id, f"Привет {message.from_user.first_name} \n"
                                            f"Введите город для поиска отелей. ")
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["user_id"] = str(message.from_user.id)
+
         data["command_name"] = "lowprice"
         data["sorting_pl"] = sort_params["sort_low"]

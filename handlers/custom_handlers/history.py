@@ -2,11 +2,12 @@
 import logging
 
 from loader import bot
-from states.contact_info import UserInfoState
 from telebot.types import Message
+
 from database.core import crud
 from database.common.models import History, db
 from . core import write_db
+
 db_write = crud.create()
 db_read = crud.retrieve()
 
@@ -39,11 +40,12 @@ def history(message: Message) -> None:
     text_to_report = str()
     for i_dict in read_db():
         #logger_3.debug(f"Record , {record}")
-        line = f"Номер записи: {i_dict['id']},создана: {i_dict['created_at']}, " \
+        line = f"Номер записи: {i_dict['id']}, User ID: {i_dict['user_id']} , время создания: {i_dict['created_at']}, " \
                f"команда: {i_dict['command']}, город: {i_dict['city']} \n"
         text_to_report += line
 
     data_to_fill = {
+        "user_id": str(message.from_user.id),
         "command_name": "history",
         "sorting_pl": "n/a",
         "city": "n/a",
