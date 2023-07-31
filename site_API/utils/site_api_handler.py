@@ -78,7 +78,7 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
         #res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
     else:
         result = None
-    logger_2.info(f"result of location search is None: {result}")
+        logger_2.info(f"result of location search is None: {result}")
     return result
 
 
