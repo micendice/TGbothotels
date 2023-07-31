@@ -32,10 +32,6 @@ def read_db():
 
 @bot.message_handler(commands=["history"])
 def history(message: Message) -> None:
-    bot.send_message(message.from_user.id,
-                     f"О, {message.from_user.first_name}! \n"
-                     f"Спешу исполнить твою команду\n"
-                     f"Узри же историю последних десяти запросов!" )
 
     text_to_report = str()
     for i_dict in read_db():
