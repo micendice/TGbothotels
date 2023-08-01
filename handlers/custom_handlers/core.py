@@ -30,7 +30,7 @@ db_read = crud.retrieve()
 logger_1 = logging.getLogger(__name__)
 logger_1.setLevel(logging.INFO)
 
-handler_1 = logging.FileHandler(f"{__name__}.log", mode="w", encoding="utf-8")
+handler_1 = logging.FileHandler(f"{__name__}.log", mode="a", encoding="utf-8")
 formatter_1 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
 handler_1.setFormatter(formatter_1)
@@ -112,7 +112,7 @@ def get_city(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.hotels_num)
 def hotels_num(message: Message) -> None:
-    if message.text.isdigit() and int(message.text) <= MAX_HOTEL_DISPLAYED:
+    if message.text.isdigit() and 0 < int(message.text) <= MAX_HOTEL_DISPLAYED: #Delete 0< clause to test logging
         bot.send_message(message.from_user.id, "Спасибо, записал. "
                                                "Нужно ли показывать фотографии отелей? Нажмите 'Да' или 'Нет'",
                          reply_markup=y_or_no("Нужно ли показывать фотографии отелей? "))

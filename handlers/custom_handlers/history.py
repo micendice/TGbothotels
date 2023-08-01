@@ -15,7 +15,7 @@ db_read = crud.retrieve()
 logger_3 = logging.getLogger(__name__)
 logger_3.setLevel(logging.DEBUG)
 
-handler_3 = logging.FileHandler(f"{__name__}.log", mode="w")
+handler_3 = logging.FileHandler(f"{__name__}.log", mode="a")
 formatter_3 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
 handler_3.setFormatter(formatter_3)
@@ -27,6 +27,7 @@ logger_3.debug(f"Testing logging in debugging process")
 def read_db():
     result_db_read = db_read(db, History).limit(10).order_by(History.id.desc())
     db_recs = result_db_read.dicts().execute()
+    logger_3.info(f"Reading db")
     return db_recs
 
 
@@ -58,4 +59,5 @@ def history(message: Message) -> None:
                      f"О, {message.from_user.first_name}! \n"
                      f"Спешу исполнить твою команду\n"
                      f"Узри же историю последних десяти запросов!\n {text_to_report}")
+    logger_3.info(f"history command completed")
 

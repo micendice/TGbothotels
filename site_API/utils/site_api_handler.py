@@ -2,10 +2,13 @@ import requests
 import json
 import logging
 import urllib.parse
+import traceback
+import sys
 
 from typing import Dict
 
 from config_data.config import SiteSettings, url_loc_search, url_hotels_list, url_hotel_summary, url_get_offer
+from utils.logging import log, error_log
 
 site = SiteSettings()
 
@@ -20,16 +23,17 @@ base_url = site.host_api
 logger_2 = logging.getLogger(__name__)
 logger_2.setLevel(logging.INFO)
 
-handler_2 = logging.FileHandler(f"{__name__}.log", mode="w", encoding="utf-8")
+handler_2 = logging.FileHandler(f"{__name__}.log", mode="a", encoding="utf-8")
 formatter_2 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s")
 
 handler_2.setFormatter(formatter_2)
 logger_2.addHandler(handler_2)
 
-logger_2.info(f"Testing logging from the very beginning")
+logger_2.info(f"logger site_api_handler started")
 
 
 def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: int):
+    log.info(f"Make response func started")
     if method == 'get':
         logger_2.info(f"Creating request : method: {method}\nurl: {url}\n"
                       f"headers: {headers}\n params- (querystring): {params}\ntimeout: {timeout}")
@@ -55,9 +59,11 @@ def _make_response(method: str, url: str, headers: Dict, params: Dict, timeout: 
     logger_2.info(f"Requesting successful. Response is {status_code}")
 
     if status_code == 200:
+        log.info(f"Make response func succeeded with result {status_code}")
         return response.text
     else:
         logger_2.info(f"Fail! Response is {status_code}")
+        log.info(f"Make response func failed with result {status_code}")
 
 
 def _find_location(location: str, base: str = base_url, headers: Dict = st_headers,
@@ -90,7 +96,13 @@ def _hotels_list(payload: Dict, base: str = base_url, headers: Dict = st_headers
     response = func("post", url, headers, payload, timeout)
     response_dict = json.loads(response)
     hotels_id_info = dict()
-    properties_list = response_dict["data"]["propertySearch"]["properties"]
+    try:
+        properties_list = response_dict["data"]["propertySearch"]["properties"]
+
+    except:
+        frame = traceback.extract_tb(sys.exc_info()[2])
+        line_no = str(frame[0]).split()[4]
+        error_log(line_no)
 
     for item in properties_list:
         hotels_id_info[item["id"]] = {"name": item["name"]}
@@ -102,7 +114,12 @@ def _hotel_summary(payload: Dict, num_photo: int, base: str = base_url,
     url = urllib.parse.urljoin(base, url_hotel_summary, True)
     headers["content-type"] = "application/json"
     response = func("post", url, headers, payload, timeout)
-    response_dict = json.loads(response)
+    try:
+        response_dict = json.loads(response)
+    except:
+        frame = traceback.extract_tb(sys.exc_info()[2])
+        line_no = str(frame[0]).split()[4]
+        error_log(line_no)
 
     short_descr = response_dict["data"]["propertyInfo"]["summary"]["tagline"]
     addressline = response_dict["data"]["propertyInfo"]["summary"]["location"]["address"]["addressLine"]
@@ -126,6 +143,7 @@ def _hotel_price(payload: Dict, base: str = base_url,
     if error_message:
         result = response_dict["data"]["propertyOffers"]["errorMessage"]["title"]["text"]
         print(error_message)
+        logger_2.info(f"price not available {result}")
     else:
         accomodation_price = \
             response_dict["data"]["propertyOffers"]["units"][0]["ratePlans"][0]["priceDetails"][0]["totalPriceMessage"]
@@ -138,19 +156,41 @@ class SiteApiInterface:
 
     @staticmethod
     def find_location(location):
-        return _find_location(location)
+        try:
+            return _find_location(location)
+        except:
+            frame = traceback.extract_tb(sys.exc_info()[2])
+            line_no = str(frame[0]).split()[4]
+            error_log(line_no)
+
 
     @staticmethod
     def get_hotels_list(payload):
-        return _hotels_list(payload)
+        try:
+            return _hotels_list(payload)
+        except:
+            frame = traceback.extract_tb(sys.exc_info()[2])
+            line_no = str(frame[0]).split()[4]
+            error_log(line_no)
 
     @staticmethod
     def get_hotel_summary(payload, num_photo):
-        return _hotel_summary(payload, num_photo)
+        try:
+            return _hotel_summary(payload, num_photo)
+
+        except:
+            frame = traceback.extract_tb(sys.exc_info()[2])
+            line_no = str(frame[0]).split()[4]
+            error_log(line_no)
 
     @staticmethod
     def get_hotel_price(payload):
-        return _hotel_price(payload)
+        try:
+            return _hotel_price(payload)
+        except:
+            frame = traceback.extract_tb(sys.exc_info()[2])
+            line_no = str(frame[0]).split()[4]
+            error_log(line_no)
 
 
 site_api = SiteApiInterface()
