@@ -1,0 +1,94 @@
+1. 2023-08-01 12:27:28,673 (__init__.py:1083 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message"
+2023-08-01 12:27:28,677 (__init__.py:1085 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1074, in __threaded_polling
+    self.worker_pool.raise_exceptions()
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 156, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 100, in run
+    task(*args, **kwargs)
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 6395, in _run_middlewares_and_handler
+    result = handler['function'](message)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\handlers\custom_handlers\core.py", line 176, in calendar_callback_in
+    bot.edit_message_text(f"Выберите {LSTEP[step]}",
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 3646, in edit_message_text
+    result = apihelper.edit_message_text(self.token, text, chat_id, message_id, inline_message_id, parse_mode,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\apihelper.py", line 1284, in edit_message_text
+    return _make_request(token, method_url, params=payload, method='post')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\apihelper.py", line 162, in _make_request
+    json_result = _check_result(method_name, result)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\apihelper.py", line 189, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+"
+
+2. 2023-08-01 12:33:35,824 (__init__.py:960 MainThread) ERROR - TeleBot: "Infinity polling exception: the JSON object must be str, bytes or bytearray, not NoneType"
+2023-08-01 12:33:35,834 (__init__.py:962 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 955, in infinity_polling
+    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1043, in polling
+    self.__threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1118, in __threaded_polling
+    raise e
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1074, in __threaded_polling
+    self.worker_pool.raise_exceptions()
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 156, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 100, in run
+    task(*args, **kwargs)
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 6395, in _run_middlewares_and_handler
+    result = handler['function'](message)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\handlers\custom_handlers\core.py", line 268, in params_ready
+    hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\site_API\utils\site_api_handler.py", line 160, in get_hotel_summary
+    return _hotel_summary(payload, num_photo)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\site_API\utils\site_api_handler.py", line 108, in _hotel_summary
+    response_dict = json.loads(response)
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+"
+{'__typename': 'MessageResult', 'title': {'__typename': 'MessagingResultTitle', 'text': 'Your dates need to occur after 2023-08-01. Try updating your dates to see prices for your trip.', 'theme': None}}
+{'__typename': 'MessageResult', 'title': {'__typename': 'MessagingResultTitle', 'text': 'Your dates need to occur after 2023-08-01. Try updating your dates to see prices for your trip.', 'theme': None}}
+{'__typename': 'MessageResult', 'title': {'__typename': 'MessagingResultTitle', 'text': 'Your dates need to occur after 2023-08-01. Try updating your dates to see prices for your trip.', 'theme': None}}
+{'__typename': 'MessageResult', 'title': {'__typename': 'MessagingResultTitle', 'text': 'Your dates need to occur after 2023-08-01. Try updating your dates to see prices for your trip.', 'theme': None}}
+{'__typename': 'MessageResult', 'title': {'__typename': 'MessagingResultTitle', 'text': 'Your dates need to occur after 2023-08-01. Try updating your dates to see prices for your trip.', 'theme': None}}
+2023-08-01 12:34:29,660 (__init__.py:960 MainThread) ERROR - TeleBot: "Infinity polling exception: the JSON object must be str, bytes or bytearray, not NoneType"
+2023-08-01 12:34:29,666 (__init__.py:962 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 955, in infinity_polling
+    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1043, in polling
+    self.__threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1118, in __threaded_polling
+    raise e
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 1074, in __threaded_polling
+    self.worker_pool.raise_exceptions()
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 156, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\util.py", line 100, in run
+    task(*args, **kwargs)
+  File "C:\Users\Rodinkova\diplom\Lib\site-packages\telebot\__init__.py", line 6395, in _run_middlewares_and_handler
+    result = handler['function'](message)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\handlers\custom_handlers\core.py", line 268, in params_ready
+    hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\site_API\utils\site_api_handler.py", line 160, in get_hotel_summary
+    return _hotel_summary(payload, num_photo)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\PycharmProjects\diplom\site_API\utils\site_api_handler.py", line 108, in _hotel_summary
+    response_dict = json.loads(response)
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Rodinkova\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
