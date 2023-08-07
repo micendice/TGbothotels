@@ -134,15 +134,14 @@ def get_need_photo(message: Message) -> None:
             data["need_photo"] = True
 
     elif message.text == 'НЕТ':
-        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания."
-                                               " Введите дату заезда")
-        bot.set_state(message.from_user.id, SearchParamState.calendar_checkin, message.chat.id)
+        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
+                                               "Выберите количество взрослых и детей.")
+        bot.set_state(message.from_user.id, SearchParamState.guests_num, message.chat.id)
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = False
             data['num_photo'] = 0
-        start_date = today
-        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-        return start_calendar(message, 'checkin', start_date, final_date)               #запуск календаря
+
+        return start_guests_choose( params )      #start guests_num
 
     else:
         bot.send_message(message.from_user.id, "Нужно ли показывать фотографии отелей?\n"
@@ -152,6 +151,20 @@ def get_need_photo(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.num_photo)
 def get_num_photo(message: Message) -> None:
+    if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
+        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
+                                               "Выберите количество взрослых и детей.")
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            bot.set_state(message.from_user.id, SearchParamState.guests_num, message.chat.id)
+            data["num_photo"] = int(message.text)
+            return start_guests_choose(params)                      # start guests_num
+    else:
+        bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
+                                               f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
+
+
+@bot.message_handler(state=SearchParamState.guests_num)
+def get_guests_num(message: Message) -> None:
     if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
         bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
                                                "Введите дату заезда")
