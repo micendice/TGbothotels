@@ -12,14 +12,14 @@ from states.search_params import SearchParamState
 from telebot.types import Message, InputMediaPhoto
 
 from keyboards.reply.y_or_no import y_or_no
-#from keyboards.inline.custom_keyb import custom_reply_markup
+from keyboards.inline.guests_choose import adults_reply_markup, kids_reply_markup
 
 from site_API.utils.site_api_handler import site_api
 from database.core import crud
 from database.common.models import History, db
 
 from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DISPLAYED, SEARCH_INTERVAL, MAX_STAY, \
-    payload_hotels_list, payload_summary, payload_get_offer, command_set, sort_params, CUSTOM_COMMANDS
+    MAX_KID_AGE, payload_hotels_list, payload_summary, payload_get_offer, command_set, sort_params, CUSTOM_COMMANDS
 
 
 today = datetime.date.today()
@@ -69,6 +69,12 @@ def write_db(data: Dict) -> None:
     db_write(db, History, data_to_write)
 
 
+def start_guests_choose(message: Message)->None:
+    # start to specify guests number and the age of kids
+    bot.send_message(message.chat.id, "Выберите количество взрослых гостей (старше 17 лет)",
+                     reply_markup=adults_reply_markup)
+
+
 def start_calendar(message: Message, calendar_id: str, start_date, final_date):
     calendar, step = DetailedTelegramCalendar(calendar_id=calendar_id, min_date=start_date,
                                               max_date=final_date, locale="ru").build()
@@ -85,6 +91,36 @@ def custom_sort_btn_handler(c):
     with bot.retrieve_data(c.from_user.id) as data:
         data["sorting_pl"] = sort_params[c.data]
     bot.send_message(c.message.chat.id, f"Введите город для поиска отелей. ")
+
+
+@bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("adults_"))
+def adults_num_handler(c):
+
+    with bot.retrieve_data(c.from_user.id) as data:
+        data["rooms_payload"][0]["adults"] = int(c.data[:8])
+
+    bot.send_message(c.message.chat.id, f"А теперь введите количество детей ",
+                     reply_markup=kids_reply_markup)
+
+
+@bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("kids_"))
+def kids_num_handler(c):
+    num_of_kids = int(c.data[:5])
+    if num_of_kids == 0:
+        bot.set_state(c.message.chat.id, SearchParamState.guests_num, c.message.chat.id)
+
+    else:
+        with bot.retrieve_data(c.from_user.id) as data:
+            for i_kid in range(num_of_kids):
+                data["rooms_payload"][0]["children"][i_kid]["age"] = 0
+
+            """rooms_payload = [{"adults": 2, "children": [{"age": 13}]}]"""
+        bot.set_state(c.message.chat.id, SearchParamState.guests_num, c.message.chat.id)
+        bot.send_message(c.message.chat.id, f"А теперь введите возраст детей (цифра от 1 до 17)")
+
+
+def get_kid_age(message: Message)->int:
+
 
 
 @bot.message_handler(state=SearchParamState.city)
@@ -134,14 +170,12 @@ def get_need_photo(message: Message) -> None:
             data["need_photo"] = True
 
     elif message.text == 'НЕТ':
-        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
-                                               "Выберите количество взрослых и детей.")
-        bot.set_state(message.from_user.id, SearchParamState.guests_num, message.chat.id)
+
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['need_photo'] = False
             data['num_photo'] = 0
-
-        return start_guests_choose( params )      #start guests_num
+        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
+                                               "Выберите сначала количество взрослых", reply_markup=adults_reply_markup)
 
     else:
         bot.send_message(message.from_user.id, "Нужно ли показывать фотографии отелей?\n"
@@ -152,12 +186,13 @@ def get_need_photo(message: Message) -> None:
 @bot.message_handler(state=SearchParamState.num_photo)
 def get_num_photo(message: Message) -> None:
     if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
-        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
-                                               "Выберите количество взрослых и детей.")
+
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            bot.set_state(message.from_user.id, SearchParamState.guests_num, message.chat.id)
             data["num_photo"] = int(message.text)
-            return start_guests_choose(params)                      # start guests_num
+
+        bot.send_message(message.from_user.id, "Спасибо, записал. Давайте определимся с составом гостей. "
+                                               "Выберите сначала количество взрослых", reply_markup=adults_reply_markup)
+
     else:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
@@ -165,18 +200,21 @@ def get_num_photo(message: Message) -> None:
 
 @bot.message_handler(state=SearchParamState.guests_num)
 def get_guests_num(message: Message) -> None:
-    if message.text.isdigit() and 0 < int(message.text) <= MAX_PHOTO_DISPLAYED:
+    # specifies all kids age and finalises rooms_payload
+    if message.text.isdigit() and 0 < int(message.text) <= MAX_KID_AGE:
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            kids_num = len(data["rooms_payload"][0]["children"])
+            for i_kid in range(kids_num):
+                data["rooms_payload"][0]["children"][i_kid]["age"] = get_kid_age(message)
+
         bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
                                                "Введите дату заезда")
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            bot.set_state(message.from_user.id, SearchParamState.calendar_checkin, message.chat.id)
-            data["num_photo"] = int(message.text)
-            start_date = today
-            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-            return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря
+        start_date = today
+        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+
+        return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря
     else:
-        bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
-                                               f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
+        bot.send_message(message.from_user.id, f"Для ввода возраста ребенка введите число от 1 до {MAX_KID_AGE}")
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id="checkin"))

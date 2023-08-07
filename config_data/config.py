@@ -28,6 +28,7 @@ MAX_PHOTO_DISPLAYED: int = 5     # max number of displayed photo
 MAX_HOTEL_DISPLAYED: int = 5     # max number of displayed hotels
 SEARCH_INTERVAL: int = 90          # max days search depth
 MAX_STAY: int = 30              # max stay duration
+MAX_KID_AGE = 17
 
 load_dotenv()
 
