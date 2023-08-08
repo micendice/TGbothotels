@@ -3,7 +3,7 @@ import peewee as pw
 from datetime import datetime
 
 
-db = pw.SqliteDatabase('querylog14.db')
+db = pw.SqliteDatabase('querylog1.db')
 
 
 class ModelBase(pw.Model):
