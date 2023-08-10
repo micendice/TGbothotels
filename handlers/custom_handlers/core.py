@@ -45,6 +45,7 @@ def final_text(data: Dict):
            f"Город: {data['city']} \n" \
            f"Показать {data['hotels_num']} отеля" \
            f"\nПоказывать {data['num_photo']} фото" \
+           f"\nВзрослые: {data['rooms_payload'][0]['adults']},  дети: {len(data['rooms_payload'][0]['children'])}" \
            f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
            f"\nВсё верно?\n" \
            f"ДА - начать поиск\n" \
