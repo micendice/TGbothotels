@@ -131,27 +131,31 @@ def kids_num_handler(c):
             data["rooms_payload"][0]["children"] = children_list
 
             """rooms_payload = [{"adults": 2, "children": [{"age": 13}]}]"""
-        bot.set_state(c.message.chat.id, SearchParamState.guests_num, c.message.chat.id)
-        bot.send_message(c.message.chat.id, f"А теперь введите возраст детей (цифра от 1 до 17)")
+        """bot.set_state(c.message.chat.id, SearchParamState.guests_num, c.message.chat.id)"""
+        bot.send_message(c.message.chat.id, f"А теперь введите возраст ребенка",
+                         reply_markup=kids_age_markup)
 
 
 @bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("age_"))
 def kids_age_handler(c):
     with bot.retrieve_data(c.from_user.id) as data:
         num_of_kids = len(data["rooms_payload"][0]["children"])
+
         for i_kid in range(num_of_kids):
             if data["rooms_payload"][0]["children"][i_kid]["age"] == 0:
-                data["rooms_payload"][0]["children"][i_kid]["age"] == c.data[3:]
-            kid_age_dict = {"age": 0}
-            children_list.append(kid_age_dict)
-    num_of_kids = int(c.data[5])
-    if num_of_kids == 0:
-        bot.send_message(c.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
-                                               "Введите дату заезда")
-        start_date = today
-        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+                data["rooms_payload"][0]["children"][i_kid]["age"] = c.data[3:]
+                if data["rooms_payload"][0]["children"][num_of_kids - 1]["age"] == 0:
+                    enter_txt = f"Введите возраст {RUS_NUMERALS[i_kid + 1]} ребенка"
+                    bot.send_message(c.from_user.id, enter_txt, reply_markup=kids_age_markup)
+                break
 
-        return start_calendar(c.from_user.id, "checkin", start_date, final_date)
+        if data["rooms_payload"][0]["children"][num_of_kids - 1]["age"] != 0:
+            bot.send_message(c.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
+                                                   "Введите дату заезда")
+            start_date = today
+            final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+            return start_calendar(c.from_user.id, "checkin", start_date, final_date)
+
 
 def get_kid_age(message: Message, kid_num) -> int:
     enter_txt = f"Введите возраст {RUS_NUMERALS[kid_num]} ребенка"
@@ -233,28 +237,25 @@ def get_num_photo(message: Message) -> None:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
-
+"""
 @bot.message_handler(state=SearchParamState.guests_num)
 def get_guests_num(message: Message) -> None:
     # specifies all kids age and finalises rooms_payload
-    if message.text.isdigit() and 0 < int(message.text) <= MAX_KID_AGE:
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            kids_num = len(data["rooms_payload"][0]["children"])
-            data["rooms_payload"][0]["children"][0]["age"] = int(message.text)
-            for i_kid in range(1, kids_num + 1):
-                enter_txt = f"Введите возраст {RUS_NUMERALS[kids_num]} ребенка"
-                bot.send_message_text(message.from_user.id, enter_txt, reply_markup=kids_age_markup) # А как ответ принимать?
-                data["rooms_payload"][0]["children"][i_kid]["age"] = get_kid_age(message, i_kid)
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        kids_num = len(data["rooms_payload"][0]["children"])
+        data["rooms_payload"][0]["children"][0]["age"] = int(message.text)
+        for i_kid in range(1, kids_num + 1):
+            enter_txt = f"Введите возраст {RUS_NUMERALS[kids_num]} ребенка"
+            bot.send_message_text(message.from_user.id, enter_txt, reply_markup=kids_age_markup) # А как ответ принимать?
+
+    start_date = today
+    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
+    return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря"""
+
+"""data["rooms_payload"][0]["children"][i_kid]["age"] = get_kid_age(message, i_kid)
 
         bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
-                                               "Введите дату заезда")
-        start_date = today
-        final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-
-        return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря
-    else:
-        bot.send_message(message.from_user.id, f"Для ввода возраста ребенка введите число от 1 до {MAX_KID_AGE}")
-
+                                               "Введите дату заезда")"""
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id="checkin"))
 def calendar_callback_in(c, calendar_id: str = 'checkin', start_date=today):
