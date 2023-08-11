@@ -45,13 +45,15 @@ def final_text(data: Dict):
            f"Город: {data['city']} \n" \
            f"Показать {data['hotels_num']} отеля" \
            f"\nПоказывать {data['num_photo']} фото" \
-           f"\nВзрослые: {data['rooms_payload'][0]['adults']},  дети: {len(data['rooms_payload'][0]['children'])}" \
+           f"\nВзрослые: {data['rooms_payload'][0]['adults']}, " \
+           f"дети: {len(data['rooms_payload'][0]['children'])}," \
            f"\nДаты проживания: c {data['checkin']} по {data['checkout']}" \
            f"\nВсё верно?\n" \
            f"ДА - начать поиск\n" \
            f"НЕТ - ввести параметры заново"
 
     return text
+"""'0' if (data['rooms_payload'][0]['children'][0]['age'] == 0) else """
 
 
 def write_db(data: Dict) -> None:
@@ -64,7 +66,7 @@ def write_db(data: Dict) -> None:
         "hotels_num": data["hotels_num"],
         "num_photo": data["num_photo"] if data["need_photo"] else "No Photo",
         "adults_num": data["rooms_payload"][0]["adults"],
-        "kids_num": len(data["rooms_payload"][0]["children"]),
+        "kids_num": len(data['rooms_payload'][0]['children']),
         "check_in_date": data["checkin"],
         "check_out_date": data["checkout"],
         "full_result": data["hotels_list"],
@@ -101,11 +103,11 @@ def custom_sort_btn_handler(c):
 def adults_num_handler(c):
 
     with bot.retrieve_data(c.from_user.id) as data:
-        """room_dict = {"adults": int(c.data[7]), "children": 0}"""
+
         rp_temp = list()
-        rp_temp.append({"adults": int(c.data[7]), "children": 0})
+        rp_temp.append({"adults": int(c.data[7]), "children": []})
         logger_1.info(f"payload data as far is: {rp_temp}")
-        """data["rooms_payload"][0]["adults"] = int(c.data[7])"""
+
         data["rooms_payload"] = rp_temp
         logger_1.info(f"data already written : \n{data}")
     bot.send_message(c.message.chat.id, f"А теперь введите количество детей ",
@@ -116,6 +118,9 @@ def adults_num_handler(c):
 def kids_num_handler(c):
     num_of_kids = int(c.data[5])
     if num_of_kids == 0:
+        with bot.retrieve_data(c.from_user.id) as data:
+            '''data["rooms_payload"][0]["children"][0]["age"] = 0  # Rewrite the same info'''
+
         bot.send_message(c.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
                                                "Введите дату заезда")
         start_date = today
@@ -125,7 +130,7 @@ def kids_num_handler(c):
         # Запуск календаря chat_id передается только
 
     else:
-        with bot.retrieve_data(c.from_user.id) as data:
+        with bot.retrieve_data(c.from_user.id) as data:         #creating list of kids witn age: 0
             children_list = list()
             for i_kid in range(num_of_kids):
                 kid_age_dict = {"age": 0}
@@ -133,8 +138,6 @@ def kids_num_handler(c):
 
             data["rooms_payload"][0]["children"] = children_list
 
-            """rooms_payload = [{"adults": 2, "children": [{"age": 13}]}]"""
-        """bot.set_state(c.message.chat.id, SearchParamState.guests_num, c.message.chat.id)"""
         bot.send_message(c.message.chat.id, f"А теперь введите возраст ребенка",
                          reply_markup=kids_age_markup)
 
@@ -159,12 +162,6 @@ def kids_age_handler(c):
             final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
             return start_calendar(c.from_user.id, "checkin", start_date, final_date)
 
-"""
-def get_kid_age(message: Message, kid_num) -> int:
-    enter_txt = f"Введите возраст {RUS_NUMERALS[kid_num]} ребенка"
-    bot.send_message(message.from_user.id, enter_txt)
-    return 13
-"""
 
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
