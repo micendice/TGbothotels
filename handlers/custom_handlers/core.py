@@ -63,6 +63,8 @@ def write_db(data: Dict) -> None:
         "city": data["city"],
         "hotels_num": data["hotels_num"],
         "num_photo": data["num_photo"] if data["need_photo"] else "No Photo",
+        "adults_num": data["rooms_payload"][0]["adults"],
+        "kids_num": len(data["rooms_payload"][0]["children"]),
         "check_in_date": data["checkin"],
         "check_out_date": data["checkout"],
         "full_result": data["hotels_list"],
@@ -144,8 +146,8 @@ def kids_age_handler(c):
 
         for i_kid in range(num_of_kids):
             if data["rooms_payload"][0]["children"][i_kid]["age"] == 0:
-                data["rooms_payload"][0]["children"][i_kid]["age"] = c.data[3:]
-                if data["rooms_payload"][0]["children"][num_of_kids - 1]["age"] == 0:
+                data["rooms_payload"][0]["children"][i_kid]["age"] = int(c.data[4:])          #one or two digit age
+                if int(data["rooms_payload"][0]["children"][num_of_kids - 1]["age"]) == 0:
                     enter_txt = f"Введите возраст {RUS_NUMERALS[i_kid + 1]} ребенка"
                     bot.send_message(c.from_user.id, enter_txt, reply_markup=kids_age_markup)
                 break
@@ -157,12 +159,12 @@ def kids_age_handler(c):
             final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
             return start_calendar(c.from_user.id, "checkin", start_date, final_date)
 
-
+"""
 def get_kid_age(message: Message, kid_num) -> int:
     enter_txt = f"Введите возраст {RUS_NUMERALS[kid_num]} ребенка"
     bot.send_message(message.from_user.id, enter_txt)
     return 13
-
+"""
 
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
@@ -238,25 +240,6 @@ def get_num_photo(message: Message) -> None:
         bot.send_message(message.from_user.id, f"Для ввода количества показываемых фотографий "
                                                f"введите число от 1 до {MAX_PHOTO_DISPLAYED}")
 
-"""
-@bot.message_handler(state=SearchParamState.guests_num)
-def get_guests_num(message: Message) -> None:
-    # specifies all kids age and finalises rooms_payload
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        kids_num = len(data["rooms_payload"][0]["children"])
-        data["rooms_payload"][0]["children"][0]["age"] = int(message.text)
-        for i_kid in range(1, kids_num + 1):
-            enter_txt = f"Введите возраст {RUS_NUMERALS[kids_num]} ребенка"
-            bot.send_message_text(message.from_user.id, enter_txt, reply_markup=kids_age_markup) # А как ответ принимать?
-
-    start_date = today
-    final_date = datetime.timedelta(days=SEARCH_INTERVAL) + start_date
-    return start_calendar(message, "checkin", start_date, final_date)               # Запуск календаря"""
-
-"""data["rooms_payload"][0]["children"][i_kid]["age"] = get_kid_age(message, i_kid)
-
-        bot.send_message(message.from_user.id, "Спасибо, записал. Осталось выбрать даты проживания. "
-                                               "Введите дату заезда")"""
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id="checkin"))
 def calendar_callback_in(c, calendar_id: str = 'checkin', start_date=today):
@@ -340,11 +323,15 @@ def params_ready(message: Message) -> None:
         payload_hotels_list["resultsSize"] = data["hotels_num"]
         payload_hotels_list["sort"] = data["sorting_pl"]
         payload_hotels_list["filters"] = command_set[data['command_name']]['filters_command']
+        payload_hotels_list["rooms"] = data["rooms_payload"]              #room payload'rooms': [{'adults': 2, 'children': [{'age': 13}]}]
+
+        logger_1.info(f"payload for hotels_list request: {payload_hotels_list}")
 
         data["checkInDate"] = payload_hotels_list["checkInDate"]
         data["checkOutDate"] = payload_hotels_list["checkOutDate"]
 
         data["hotels_list"] = site_api.get_hotels_list(payload_hotels_list)
+        logger_1.info(f" hotels_list request answer: {data['hotels_list']}")
 
         payload_get_offer["checkInDate"] = data["checkInDate"]
         payload_get_offer["checkOutDate"] = data["checkOutDate"]

@@ -49,6 +49,7 @@ def history(message: Message) -> None:
         "hotels_num": "n/a",
         "need_photo": "n/a",
         "num_photo": "n/a",
+        "rooms_payload": [{"adults": "n/a", "children": []}],     #0 instead of n/a in db
         "checkin": "n/a",
         "checkout": "n/a",
         "hotels_list": {"1": {"result_descr": "n/a"}},
