@@ -332,6 +332,9 @@ def params_ready(message: Message) -> None:
 
         payload_get_offer["checkInDate"] = data["checkInDate"]
         payload_get_offer["checkOutDate"] = data["checkOutDate"]
+        payload_get_offer["rooms"] = data["rooms_payload"]
+        logger_1.info(f"data for making price request {data['rooms_payload']}")
+
         payload_get_offer["destination"]["regionId"] = data["regionId"]
         num_photo = data["num_photo"]
 
@@ -339,7 +342,7 @@ def params_ready(message: Message) -> None:
             payload_summary["propertyId"] = hotel_id
             payload_get_offer["propertyId"] = hotel_id
 
-            #print(payload_get_offer, "*"*20)
+            logger_1.info(f"calling for price with payload : \n{payload_get_offer} \n and data: {data['rooms_payload']}")
 
             hotel_summary_dict = site_api.get_hotel_summary(payload=payload_summary, num_photo=num_photo)
             hotel_price = site_api.get_hotel_price(payload_get_offer)
