@@ -3,7 +3,7 @@ import peewee as pw
 from datetime import datetime
 
 
-db = pw.SqliteDatabase('querylog14.db')
+db = pw.SqliteDatabase('querylog2.db')
 
 
 class ModelBase(pw.Model):
@@ -21,6 +21,8 @@ class History(ModelBase):
     city = pw.TextField()
     hotels_num = pw.IntegerField()
     num_photo = pw.TextField()
+    adults_num = pw.TextField()
+    kids_num = pw.TextField()
     check_in_date = pw.DateField()
     check_out_date = pw.DateField()
 

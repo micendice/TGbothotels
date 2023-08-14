@@ -21,11 +21,11 @@ formatter_3 = logging.Formatter("%(name)s %(asctime)s %(levelname)s %(message)s"
 handler_3.setFormatter(formatter_3)
 logger_3.addHandler(handler_3)
 
-logger_3.debug(f"Testing logging in debugging process")
+logger_3.debug(f"history command")
 
 
-def read_db():
-    result_db_read = db_read(db, History).limit(10).order_by(History.id.desc())
+def read_db(current_user_id):
+    result_db_read = db_read(db, History).where(History.user_id == current_user_id).limit(10).order_by(History.id.desc())
     db_recs = result_db_read.dicts().execute()
     logger_3.info(f"Reading db")
     return db_recs
@@ -33,12 +33,12 @@ def read_db():
 
 @bot.message_handler(commands=["history"])
 def history(message: Message) -> None:
-
+    current_user_id = str(message.from_user.id)
     text_to_report = str()
-    for i_dict in read_db():
+    for i_dict in read_db(current_user_id):
         #logger_3.debug(f"Record , {record}")
         line = f"Номер записи: {i_dict['id']}, User ID: {i_dict['user_id']} , время создания: {i_dict['created_at']}, " \
-               f"команда: {i_dict['command']}, город: {i_dict['city']} \n"
+            f"команда: {i_dict['command']}, город: {i_dict['city']} \n"
         text_to_report += line
 
     data_to_fill = {
@@ -49,6 +49,7 @@ def history(message: Message) -> None:
         "hotels_num": "n/a",
         "need_photo": "n/a",
         "num_photo": "n/a",
+        "rooms_payload": [{"adults": "n/a", "children": []}],     #emty list means 0 instead of n/a in db
         "checkin": "n/a",
         "checkout": "n/a",
         "hotels_list": {"1": {"result_descr": "n/a"}},

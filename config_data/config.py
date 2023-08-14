@@ -28,6 +28,8 @@ MAX_PHOTO_DISPLAYED: int = 5     # max number of displayed photo
 MAX_HOTEL_DISPLAYED: int = 5     # max number of displayed hotels
 SEARCH_INTERVAL: int = 90          # max days search depth
 MAX_STAY: int = 30              # max stay duration
+MAX_KID_AGE = 17
+RUS_NUMERALS = ["первого", "второго", "третьего", "четвертого", "пятого"]
 
 load_dotenv()
 
@@ -37,7 +39,7 @@ class SiteSettings(BaseSettings):
     host_api: StrictStr = os.getenv("HOST_API", None)
 
 
-rooms_payload = [{"adults": 2, "children": [{"age": 13}]}]
+rooms_payload = [{"adults": 1, "children": []}]
 payload_hotels_list = {
     "currency": "USD",
     "eapid": 1,

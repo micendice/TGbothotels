@@ -92,8 +92,18 @@ def _hotels_list(payload: Dict, base: str = base_url, headers: Dict = st_headers
                  timeout: int = 1000, func=_make_response):
     url = urllib.parse.urljoin(base, url_hotels_list, True)
     headers["content-type"] = "application/json"
+    try:
+        response = func("post", url, headers, payload, timeout)
+    except:
+        frame = traceback.extract_tb(sys.exc_info()[2])
+        line_no = str(frame[0]).split()[4]
+        error_log(line_no)
 
-    response = func("post", url, headers, payload, timeout)
+    if response:
+        logger_2.info(f"response for hotels list request is not None: ")
+    else:
+        logger_2.info(f"response for hotels list request is None!!! ")
+
     response_dict = json.loads(response)
     hotels_id_info = dict()
     try:

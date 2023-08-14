@@ -11,6 +11,7 @@ class SearchParamState(StatesGroup):
     complete = State()
     menu = State()
     cust_param = State()
+    guests_num = State()
 
 
 
