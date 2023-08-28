@@ -76,7 +76,8 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
     response_dict = json.loads(response)
 
     if response_dict['rc'] == 'OK':
-
+        #TODO: obtain list with number of locations with 'CITY' and 'NEIBOURGHHOOD' keys. THEn offer multiply choice to user
+        #TODO: first - form list of dicts. second - create message with reply markup of multiple choice
         gaiaId = response_dict["sr"][0]["gaiaId"]
         logger_2.info(f"result of location search: {response_dict['rc']}, regionID = {gaiaId}")
         #coordinates = response_dict["sr"][0]["coordinates"]
