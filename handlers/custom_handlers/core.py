@@ -14,6 +14,7 @@ from telebot.types import Message, InputMediaPhoto
 from keyboards.reply.y_or_no import y_or_no
 from keyboards.inline.guests_choose import adults_reply_markup, kids_reply_markup
 from keyboards.inline.kids_age_markup import kids_age_markup
+from keyboards.inline.location_choice import location_choice_markup
 
 from site_API.utils.site_api_handler import site_api
 from database.core import crud
@@ -24,6 +25,7 @@ from config_data.config import CITY_TEMPLATE, MAX_PHOTO_DISPLAYED, MAX_HOTEL_DIS
 
 
 today = datetime.date.today()
+location_list = []
 
 db_write = crud.create()
 db_read = crud.retrieve()
@@ -149,7 +151,7 @@ def kids_age_handler(c):
 
         for i_kid in range(num_of_kids):
             if data["rooms_payload"][0]["children"][i_kid]["age"] == 0:
-                data["rooms_payload"][0]["children"][i_kid]["age"] = int(c.data[4:])          #one or two digit age
+                data["rooms_payload"][0]["children"][i_kid]["age"] = int(c.data[4:])          # one or two digit age
                 if int(data["rooms_payload"][0]["children"][num_of_kids - 1]["age"]) == 0:
                     enter_txt = f"Введите возраст {RUS_NUMERALS[i_kid + 1]} ребенка"
                     bot.send_message(c.from_user.id, enter_txt, reply_markup=kids_age_markup)
@@ -163,18 +165,39 @@ def kids_age_handler(c):
             return start_calendar(c.from_user.id, "checkin", start_date, final_date)
 
 
+@bot.callback_query_handler(func=lambda c: c.data and c.data.startswith("location_"))
+def location_choice_handler(c):
+    with bot.retrieve_data(c.from_user.id) as data:
+        data["regionId"] = c.data[8:]      # starts after "_"
+        bot.send_message(c.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
+                                         f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
+
+        bot.set_state(c.from_user.id, SearchParamState.hotels_num, c.chat.id)
+
+
 @bot.message_handler(state=SearchParamState.city)
 def get_city(message: Message) -> None:
     if re.match(CITY_TEMPLATE, message.text):      # regexp here .  pattern imported from config
         location = site_api.find_location(message.text.lower())
+        # TODO: here should start the locations choice dialog
 
         if location:                    # checking site database - if the location exist
-            bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
-                                               f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
-            bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
             with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
                 data["city"] = message.text.lower()
-                data["regionId"] = location
+            if len(location) >= 2:
+                global location_list
+                location_list = location
+                locations_var = str(lvar["display_name"] for lvar in location)
+                bot.send_message(message.from_user.id, f"Нашлось несколько вариантов по данному запросу. "
+                                                       f"{locations_var},\n Выберите наиболее подходящий, пожалуйста",
+                                 reply_markup=location_choice_markup)
+
+            else:
+                bot.send_message(message.from_user.id, f"Спасибо, записал. Сколько отелей вывести? "
+                                                       f"(не больше {MAX_HOTEL_DISPLAYED}, пожалуйста)")
+
+                data["regionId"] = location["gaiaId"]
+                bot.set_state(message.from_user.id, SearchParamState.hotels_num, message.chat.id)
 
         else:
             bot.send_message(message.from_user.id, f"Google haven't found such place. Город не найден.\n"
