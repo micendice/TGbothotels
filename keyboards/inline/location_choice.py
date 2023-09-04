@@ -1,5 +1,5 @@
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
-from handlers.custom_handlers.core import location_list
+"""from handlers.custom_handlers.core import location_list   # circular import"""
 
 
 def build_menu(buttons, n_cols,
@@ -13,15 +13,15 @@ def build_menu(buttons, n_cols,
     return menu
 
 
-# building up list of buttons
-virtual_locations = []
-for i_loc in location_list:
-    displayed_value = i_loc["display_name"]
-    cb_data = "location_" + str(i_loc["gaiaId"])
+def loc_choice_markup_builder(location_list):
+    virtual_locations = []
+    # building up list of buttons
+    for i_loc in location_list:
+        displayed_value = i_loc["display_name"]
+        cb_data = "location_" + str(i_loc["gaiaId"])
 
-    virtual_locations.append(InlineKeyboardButton(displayed_value, callback_data=cb_data))
-
-
-# сборка клавиатуры из кнопок `InlineKeyboardButton`
-location_choice_markup = InlineKeyboardMarkup(build_menu(virtual_locations, n_cols=1))
+        virtual_locations.append(InlineKeyboardButton(displayed_value, callback_data=cb_data))
+    # сборка клавиатуры из кнопок `InlineKeyboardButton`
+    location_choice_markup = InlineKeyboardMarkup(build_menu(virtual_locations, n_cols=1))
+    return location_choice_markup
 
