@@ -76,11 +76,21 @@ def _find_location(location: str, base: str = base_url, headers: Dict = st_heade
     response_dict = json.loads(response)
 
     if response_dict['rc'] == 'OK':
+        # obtain list with number of locations with 'CITY' and 'NEIGHBORHOOD' keys. THEn offer multiply choice to user
+        # first - form list of dicts. second - in TG API core create message with reply markup of multiple choice
+        potential_loc_list = []
+        for item in response_dict["sr"]:
+            pll_dict = {}
+            if item["type"] == "CITY" or item["type"] == "NEIGHBORHOOD":
+                pll_dict["gaiaId"] = item["gaiaId"]
+                pll_dict["display_name"] = item["regionNames"]["displayName"]
+                pll_dict["type"] = item["type"]
+                potential_loc_list.append(pll_dict)
 
-        gaiaId = response_dict["sr"][0]["gaiaId"]
-        logger_2.info(f"result of location search: {response_dict['rc']}, regionID = {gaiaId}")
+        """gaiaId = response_dict["sr"][0]["gaiaId"]"""
+        logger_2.info(f"result of location search: {response_dict['rc']}, potential locations = {potential_loc_list}")
         #coordinates = response_dict["sr"][0]["coordinates"]
-        result = gaiaId
+        result = potential_loc_list
         #res1 = {"coordinates": {"latitude": coordinates["lat"], "longitude": coordinates["long"]}, "regionId": gaiaId},
     else:
         result = None
